@@ -1,8 +1,9 @@
 ---
 title: "Chapter 3"
-output: 
+output:
   html_document:
     keep_md: yes
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -379,7 +380,7 @@ The length is 100. β0 is -1 and β1 is 0.5
 
 ```{r}
 y = -1 + 0.5*x + eps
-length(Y)
+length(y)
 ```
 
 (d) Create a scatterplot displaying the relationship between x and y. Comment on what you observe. 
