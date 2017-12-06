@@ -1,0 +1,627 @@
+---
+title: "Chapter 3"
+output: 
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(MASS)
+library(ISLR)
+```
+
+##Linear Regression
+
+Simple linear regression of median value onto lstat
+```{r}
+lstat.lm <- lm(medv ~ lstat, data = Boston)
+lstat.lm
+summary(lstat.lm)
+```
+
+Can make confidence intervals
+```{r}
+confint(lstat.lm)
+```
+
+Can use predict to estimate values based on the model, gives confidence intervals.
+```{r}
+predict(lstat.lm, data.frame(lstat = c(5,10,15)), interval = "confidence")
+```  
+
+Can also do prediction intervals
+```{r}
+predict(lstat.lm, data.frame(lstat = c(5,10,15)), interval = "prediction")
+```
+
+
+Plot the data and the regression:
+```{r}
+attach(Boston)
+plot(lstat, medv)
+abline(lstat.lm)
+```
+
+Use plot to look at quality of the fit:
+```{r}
+par(mfrow=c(2,2))
+plot(lstat.lm)
+```
+
+Can graph residuals manually:
+```{r}
+par(mfrow=c(2,1))
+plot(predict(lstat.lm), residuals(lstat.lm))
+plot(predict(lstat.lm), rstudent(lstat.lm))
+```
+
+
+Look for points with high leverage:
+```{r}
+par(mfrow=c(1,1))
+plot(hatvalues(lstat.lm))
+which.max(hatvalues(lstat.lm))
+```
+
+##Multiple linear regression
+```{r}
+lstat.age.lm <- lm(medv ~ lstat + age, data = Boston)
+summary(lstat.age.lm)
+```
+
+```{r}
+boston.all.lm <- lm(medv ~., data = Boston)
+summary(boston.all.lm)
+```
+
+```{r}
+library(car)
+vif(boston.all.lm)
+```
+
+```{r}
+boston.all.lm <- lm(medv ~. -age - indus ,data=Boston )
+summary(boston.all.lm)
+```
+
+Adding * between terms will prompt lm to include both the single and interaction terms
+
+```{r}
+boston.interaction <- lm(medv ~ crim*black*lstat, data = Boston)
+summary(boston.interaction)
+```
+
+```{r}
+vif(boston.interaction)
+```
+
+Looks like strong colinearity between the data here!
+
+```{r}
+lstat.lm1 <- lm(medv ~ lstat, data = Boston)
+summary(lstat.lm1)
+
+lstat.lm.poly <- lm(medv ~ poly(lstat,5), data = Boston)
+summary(lstat.lm.poly)
+```
+
+Make 2 models, with the second have polynomial terms of lstat up to 5th order
+
+compare the 2 models:
+```{r}
+lstat.anova <- anova(lstat.lm.poly, lstat.lm1)
+lstat.anova
+```
+
+If the Df and SS is negative, then the first model is better, if they're positive, then the second model is better.
+
+Interaction terms. The : specifies only a single interaction, whereas the * tells lm to run all interactions and single terms.
+
+```{r}
+lstat.interactions <- lm(medv ~ lstat*age*rm, data = Boston)
+summary(lstat.interactions)
+```
+
+Can do lm(response ~.) this will run the model with all predictors, can add or subtract predictors with + and - after the 
+~. - can use this for interaction or poly terms if needed
+
+```{r}
+carseats.lm1 <- lm(Sales ~. + Income :Advertising +Price :Age ,data=Carseats )
+summary(carseats.lm1)
+contrasts(Carseats$ShelveLoc)
+```
+Contrasts tells us how R is coding the dummy variables associated with qualitative predictors
+
+```{r}
+interact.1 <- lm(medv ~ lstat*age, data = Boston)
+summary(interact.1)
+
+interact.2 <- lm(medv ~ age*lstat, data = Boston)
+summary(interact.2)
+```
+
+##Questions
+
+**8.This question involves the use of simple linear regression on the Auto data set.**
+
+(a) Use the lm() function to perform a simple linear regression with
+mpg as the response and horsepower as the predictor. Use the
+summary() function to print the results. Comment on the output.
+For example:
+
+```{r}
+auto.a.lm <- lm(mpg ~ horsepower, data = Auto)
+summary(auto.a.lm)
+```
+
+i. Is there a relationship between the predictor and the response?
+
+Yes.
+
+ii. How strong is the relationship between the predictor and the response?
+
+Strong - there's a highly significant P value. The effect size is also pretty substantial.
+
+iii. Is the relationship between the predictor and the response positive or negative?
+
+Negative.
+
+iv. What is the predicted mpg associated with a horsepower of 98? What are the associated 95% confidence and prediction
+intervals?
+
+```{r}
+predict(auto.a.lm, data.frame( horsepower = c(98)), interval = "confidence")
+predict(auto.a.lm, data.frame( horsepower = c(98)), interval = "prediction")
+```
+
+(b)Plot the response and the predictor. Use the abline() function to display the least squares regression line.
+
+```{r}
+library(ggplot2)
+attach(Auto)
+plot(horsepower, mpg) + abline(auto.a.lm)
+```
+
+
+(c)Use the plot() function to produce diagnostic plots of the least squares regression fit. Comment on any problems you see with
+the fit.
+
+```{r}
+par(mfrow = c(2,2))
+plot(auto.a.lm)
+```
+
+There's definately a pattern to the residuals, which was expected from the plot of the data (non-linear relationship).
+
+**9. This question involves the use of multiple linear regression on the Auto data set.**
+
+(a) Produce a scatterplot matrix which includes all of the variables in the data set.
+
+```{r}
+pairs(Auto)
+```
+
+(b) Compute the matrix of correlations between the variables using the function cor(). You will need to exclude the name variable,
+which is qualitative.
+
+```{r}
+attach(Auto)
+cor(subset(Auto,select=-name))
+```
+
+(c) Use the lm() function to perform a multiple linear regression with mpg as the response and all other variables except name as
+the predictors. Use the summary() function to print the results. Comment on the output.
+
+```{r}
+auto.lm2 <- lm(mpg ~. - name, data = Auto)
+summary(auto.lm2)
+```  
+i. Is there a relationship between the predictors and the response?
+
+Yes - the overall p-value is significant. 
+
+ii. Which predictors appear to have a statistically significant relationship to the response?
+
+The displacement, weight, year, and origin terms are all significant.
+
+iii. What does the coefficient for the year variable suggest?
+
+It suggests that newer vehicles have higher gas mileage.
+
+(d) Use the plot() function to produce diagnostic plots of the linear regression fit. Comment on any problems you see with the fit.
+Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high
+leverage?
+
+```{r}
+par(mfrow=c(2,2))
+plot(auto.lm2)
+``` 
+
+The pattern is not totally random - it looks like points 323 and 327 could be particularly problematic. Point 14 seems to have high everage.
+
+(e) Use the * and : symbols to fit linear regression models with interaction effects. Do any interactions appear to be statistically significant?
+
+```{r}
+auto.lm3 <- lm(mpg ~ (.-name)^2, data = Auto)
+summary(auto.lm3)
+```
+The above calls all 2-way interactions, but we seem to lose some previously significant single terms.
+
+```{r}
+auto.lm4 <- lm(mpg ~ .-name + displacement:year + acceleration:year + acceleration:origin, data = Auto)
+summary(auto.lm4)
+```
+
+Each of the above terms is significant.
+
+(f) Try a few different transformations of the variables, such as log(X), √X, X2. Comment on your findings.
+```{r}
+auto.lm5 <- lm(mpg ~ displacement + horsepower, data = Auto)
+summary(auto.lm5)
+```
+
+```{r}
+auto.lm6 <- lm(mpg ~ displacement + I(log(horsepower)), data = Auto)
+summary(auto.lm6)
+```
+
+This resulted in a higher F-statistic and a higher multiple R-squared.
+
+**10. This question should be answered using the Carseats data set.**
+
+(a) Fit a multiple regression model to predict Sales using Price, Urban, and US.
+
+```{r}
+cars.lm1 <- lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(cars.lm1)
+```
+
+(b) Provide an interpretation of each coefficient in the model. Be careful—some of the variables in the model are qualitative!
+
+Price has a significant, negative association with sales, Urban is not significant, and US has a significant, positive association with sales.
+
+(c) Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+sales = 13.04 + -0.0545(price) + -0.0219(if urban) + 1.2006(if US) + error
+
+(d) For which of the predictors can you reject the null hypothesis H0 : βj = 0?
+
+We can reject H0 for Price and US.
+
+(e) On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is
+evidence of association with the outcome.
+
+```{r}
+cars.lm2 <- lm(Sales ~ Price + US, data = Carseats)
+summary(cars.lm2)
+```
+
+(f) How well do the models in (a) and (e) fit the data?
+
+Both have similar R-squared values, so they both explain a similar percentage of the variation. However, the second model has 
+a higher F-statistic.
+
+```{r}
+cars.aov <- anova(cars.lm1,cars.lm2)
+cars.aov
+```
+
+(g) Using the model from (e), obtain 95% confidence intervals for the coefficient(s).
+
+```{r}
+confint(cars.lm2)
+```
+
+(h) Is there evidence of outliers or high leverage observations in the model from (e)?
+```{r}
+par(mfrow=c(2,2))
+plot(cars.lm1)
+```
+I don't see any significant outliers, but there are potentially a few high-leverage points.
+
+**11. In this problem we will investigate the t-statistic for the null hypothesis H0 : β = 0 in simple linear regression without an intercept. To begin, we generate a predictor x and a response y as follows.**
+
+```{r}
+set.seed(1)
+x=rnorm(100)
+y=2*x+rnorm(100)
+```
+
+(a) Perform a simple linear regression of y onto x, without an intercept. Report the coefficient estimate ˆβ, the standard error of
+this coefficient estimate, and the t-statistic and p-value associated with the null hypothesis H0 : β = 0. Comment on these
+results. (You can perform regression without an intercept using the command lm(y∼x+0).)
+
+```{r}
+eleven.lm <- lm( y ~ x + 0)
+summary(eleven.lm)
+```
+
+The coefficient is 1.99, the t-value is 18.73, with a p-value of nearly 0.
+
+(b) Now perform a simple linear regression of x onto y without an intercept, and report the coefficient estimate, its standard error, and the corresponding t-statistic and p-values associated with the null hypothesis H0 : β = 0. Comment on these results.
+
+```{r}
+eleven2.lm <- lm( x ~ y + 0)
+summary(eleven2.lm)
+```
+
+The two are the reverse of each other, though it is a bit weird that the second coefficient isn't .5
+
+(f) In R, show that when regression is performed with an intercept, the t-statistic for H0 : β1 = 0 is the same for the regression of y onto x as it is for the regression of x onto y.
+
+```{r}
+eleven3.lm <- lm(y ~ x)
+summary(eleven3.lm)
+```
+
+**13. In this exercise you will create some simulated data and will fit simple linear regression models to it. Make sure to use set.seed(1) prior to starting part (a) to ensure consistent results.**
+```{r}
+set.seed(1)
+```
+(a) Using the rnorm() function, create a vector, x, containing 100 observations drawn from a N(0, 1) distribution. This represents a feature, X.
+```{r}
+x=rnorm(100, 0, 1)
+```
+(b) Using the rnorm() function, create a vector, eps, containing 100 observations drawn from a N(0, 0.25) distribution i.e. a normal distribution with mean zero and variance 0.25.
+```{r}
+eps=rnorm(100, 0, sqrt(0.25))
+```
+
+(c) Using x and eps, generate a vector y according to the model:
+Y = −1 + 0.5X + ϵ. (3.39)
+What is the length of the vector y? What are the values of β0 and β1 in this linear model?
+
+The length is 100. β0 is -1 and β1 is 0.5
+
+```{r}
+y = -1 + 0.5*x + eps
+length(Y)
+```
+
+(d) Create a scatterplot displaying the relationship between x and y. Comment on what you observe. 
+```{r}
+plot(x,y)
+```
+There seems to be a fairly linear relationship between x and y, with quite a bit of variance.
+
+(e) Fit a least squares linear model to predict y using x. Comment on the model obtained. How do ˆ β0 and ˆ β1 compare to β0 and
+β1?
+
+```{r}
+lm13 <- lm(y ~ x)
+summary(lm13)
+```
+The slope estimate was just about dead on, while the B1 was pretty close.
+
+(f) Display the least squares line on the scatterplot obtained in (d). Draw the population regression line on the plot, in a different color. Use the legend() command to create an appropriate legend.
+
+```{r}
+plot(x, y)
+abline(lm13, col="blue")
+abline(-1,0.5,col="orange")
+legend("topleft",c("model","population"),col=c("blue","orange"), lty = c(1,1))
+```
+
+(g) Now fit a polynomial regression model that predicts y using x and x2. Is there evidence that the quadratic term improves the
+model fit? Explain your answer.
+
+```{r}
+lm13.poly <- lm (y ~ poly(x,2))
+summary(lm13.poly)
+
+lm13.poly2 <- lm (y ~ x + I(x^2))
+summary(lm13.poly2)
+```
+The X2 term doesn't improve the model - no significant increase in R2 or decrease in RSE.
+
+(h) Repeat (a)–(f) after modifying the data generation process in such a way that there is less noise in the data. The model (3.39) should remain the same. You can do this by decreasing the variance of the normal distribution used to generate the error term ϵ in (b). Describe your results.
+
+```{r}
+eps2 = rnorm(100, 0, sqrt(0.05))
+y2 = -1 + 0.5*x + eps2
+plot(x,y2)
+lm13.2 <- lm(y2 ~ x)
+summary(lm13.2)
+plot(x, y2)
+abline(lm13.2, col="blue")
+abline(-1,0.5,col="orange")
+legend("topleft",c("model","population"),col=c("blue","orange"), lty = c(1,1))
+```
+
+The model fit improved significantly.
+
+(i) Repeat (a)–(f) after modifying the data generation process in such a way that there is more noise in the data. The model
+(3.39) should remain the same. You can do this by increasing the variance of the normal distribution used to generate the
+error term ϵ in (b). Describe your results.
+
+```{r}
+eps3 = rnorm(100, 0, sqrt(1))
+y3 = -1 + 0.5*x + eps3
+plot(x,y3)
+lm13.3 <- lm(y3 ~ x)
+summary(lm13.3)
+plot(x, y3)
+abline(lm13.3, col="blue")
+abline(-1,0.5,col="orange")
+legend("topleft",c("model","population"),col=c("blue","orange"), lty = c(1,1))
+```
+
+The model fit is now much worse.
+
+(j) What are the confidence intervals for β0 and β1 based on the original data set, the noisier data set, and the less noisy data
+set? Comment on your results.
+
+```{r}
+confint(lm13)
+```
+```{r}
+confint(lm13.2)
+```
+```{r}
+confint(lm13.3)
+```
+
+As expected, as noise increases, the confidence interval increases. However, in all cases x is still a significant predictor (doesn't bracket 0).
+
+**14. This problem focuses on the collinearity problem.** 
+(a) Perform the following commands in R:
+```{r}
+set.seed(1)
+x1=runif(100)
+x2=0.5*x1+rnorm(100)/10
+y=2+2*x1+0.3*x2+rnorm(100)
+```
+
+The last line corresponds to creating a linear model in which y is a function of x1 and x2. Write out the form of the linear model. What are the regression coefficients?
+
+The regression coefficients are 2 for X1 and 0.3 for X2.
+
+(b) What is the correlation between x1 and x2? Create a scatterplot displaying the relationship between the variables.
+```{r}
+cor(x1, x2)
+plot(x1, x2)
+```
+
+(c) Using this data, fit a least squares regression to predict y using x1 and x2. Describe the results obtained. What are ˆ β0, ˆ β1, and ˆ β2? How do these relate to the true β0, β1, and β2? Can you reject the null hypothesis H0 : β1 = 0? How about the null
+hypothesis H0 : β2 = 0?
+
+```{r}
+twelve.lm1 <- lm(y ~ x1 + x2)
+summary(twelve.lm1)
+```
+We can reject the null for B1 but not B2.
+
+(d) Now fit a least squares regression to predict y using only x1. Comment on your results. Can you reject the null hypothesis
+H0 : β1 = 0?
+
+```{r}
+twelve.lm2 <- lm(y ~ x1)
+summary(twelve.lm2)
+```
+X1 is a significant predictor.
+
+(e) Now fit a least squares regression to predict y using only x2. Comment on your results. Can you reject the null hypothesis
+H0 : β1 = 0?
+```{r}
+twelve.lm3 <- lm(y ~ x2)
+summary(twelve.lm3)
+```
+X2 is a significant predictor.
+
+(f) Do the results obtained in (c)–(e) contradict each other? Explain your answer.
+
+Yes - X2 was not significant in the combined model, but was significant alone.
+
+```{r}
+library(car)
+vif(twelve.lm1)
+```
+
+**15. This problem involves the Boston data set, which we saw in the lab for this chapter. We will now try to predict per capita crime rate using the other variables in this data set. In other words, per capita crime rate is the response, and the other variables are the predictors.**
+
+(a) For each predictor, fit a simple linear regression model to predict the response. Describe your results. In which of the models is there a statistically significant association between the predictor and the response? Create some plots to back up your assertions.
+
+```{r}
+?Boston
+attach(Boston)
+```
+```{r}
+zn.lm <- lm(crim ~ zn)
+summary(zn.lm)
+```
+
+```{r}
+zn.lm <- lm(crim ~ zn)
+summary(zn.lm)
+```
+Significant. R2 of .04.
+
+```{r}
+indus.lm <- lm(crim ~ indus)
+summary(indus.lm)
+```
+Significant. R2 of .16
+
+```{r}
+chas.lm <- lm(crim ~ chas)
+summary(chas.lm)
+```
+Not significant.
+
+```{r}
+nox.lm <- lm(crim ~ nox)
+summary(nox.lm)
+```
+Significant. R2 of .17
+
+```{r}
+rm.lm <- lm(rm ~ indus)
+summary(rm.lm)
+```
+Significant. R2 of .15
+
+```{r}
+age.lm <- lm(crim ~ age)
+summary(age.lm)
+```
+Significant. R2 of .12
+
+```{r}
+dis.lm <- lm(crim ~ dis)
+summary(dis.lm)
+```
+Significant. R2 of .14
+
+```{r}
+rad.lm <- lm(crim ~ rad)
+summary(rad.lm)
+```
+Significant. R2 of .39
+
+```{r}
+tax.lm <- lm(crim ~ tax)
+summary(tax.lm)
+```
+Significant. R2 of .33
+
+```{r}
+ptratio.lm <- lm(crim ~ ptratio)
+summary(ptratio.lm)
+```
+Significant. R2 of .08
+
+```{r}
+black.lm <- lm(crim ~ black)
+summary(black.lm)
+```
+Significant. R2 of .15
+
+```{r}
+lstat.lm <- lm(crim ~ lstat)
+summary(lstat.lm)
+```
+Significant. R2 of .21
+
+```{r}
+medv.lm <- lm(crim ~ medv)
+summary(medv.lm)
+```
+Significant. R2 of .15
+
+Nearly of the terms are significant.
+
+```{r}
+plot(rad, crim)
+abline(rad.lm)
+```
+
+```{r}
+plot(tax, crim)
+abline(tax.lm)
+```
+
+
