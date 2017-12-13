@@ -533,6 +533,10 @@ summary(interact.2)
 ```
 
 ##Questions
+** 1. Describe the null hypotheses to which the p-values given in Table 3.4 correspond. Explain what conclusions you can draw based on these p-values. Your explanation should be phrased in terms of sales , TV, radio , and newspaper , rather than in terms of the coeffi cients of the linear model.**
+
+The intercept corresponds to the null hypothesis that the intercept is 0 – that is if the predictors were 0, then we would see 0 sales. For TV, radio, and newspaper, the null hypothesis is that each of the media don’t have a significant effect (negative or positive) on sales. Based on the P values and the coefficients, both TV and radio have a significant positive effect on sales, with radio having the largest impact. The model does however omit interaction terms, which could be important for showing a synergy between the two media. Newspaper did not have a positive effect.
+
 
 **8.This question involves the use of simple linear regression on the Auto data set.**
 
@@ -756,7 +760,7 @@ plot(auto.lm2)
 
 ![](Chapter3_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
-The pattern is not totally random - it looks like points 323 and 327 could be particularly problematic. Point 14 seems to have high everage.
+The pattern is not totally random - it looks like points 323 and 327 could be particularly problematic. Point 14 seems to have high leverage.
 
 (e) Use the * and : symbols to fit linear regression models with interaction effects. Do any interactions appear to be statistically significant?
 
@@ -1964,4 +1968,214 @@ abline(tax.lm)
 
 ![](Chapter3_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
 
+(b) Fit a multiple regression model to predict the response using all of the predictors. Describe your results. For which predictors can we reject the null hypothesis H0 : βj = 0?
 
+
+```r
+crim.all.lm <- lm(crim ~ ., data= Boston)
+summary(crim.all.lm)
+```
+
+```
+## 
+## Call:
+## lm(formula = crim ~ ., data = Boston)
+## 
+## Residuals:
+##    Min     1Q Median     3Q    Max 
+## -9.924 -2.120 -0.353  1.019 75.051 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  17.033228   7.234903   2.354 0.018949 *  
+## zn            0.044855   0.018734   2.394 0.017025 *  
+## indus        -0.063855   0.083407  -0.766 0.444294    
+## chas         -0.749134   1.180147  -0.635 0.525867    
+## nox         -10.313535   5.275536  -1.955 0.051152 .  
+## rm            0.430131   0.612830   0.702 0.483089    
+## age           0.001452   0.017925   0.081 0.935488    
+## dis          -0.987176   0.281817  -3.503 0.000502 ***
+## rad           0.588209   0.088049   6.680 6.46e-11 ***
+## tax          -0.003780   0.005156  -0.733 0.463793    
+## ptratio      -0.271081   0.186450  -1.454 0.146611    
+## black        -0.007538   0.003673  -2.052 0.040702 *  
+## lstat         0.126211   0.075725   1.667 0.096208 .  
+## medv         -0.198887   0.060516  -3.287 0.001087 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 6.439 on 492 degrees of freedom
+## Multiple R-squared:  0.454,	Adjusted R-squared:  0.4396 
+## F-statistic: 31.47 on 13 and 492 DF,  p-value: < 2.2e-16
+```
+
+Zn, indus, dis, raw, black, and medv are significant.
+
+(c) How do your results from (a) compare to your results from (b)? Create a plot displaying the univariate regression coefficients
+from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis. That is, each predictor is displayed as a
+single point in the plot. Its coefficient in a simple linear regression model is shown on the x-axis, and its coefficient estimate
+in the multiple linear regression model is shown on the y-axis.
+
+
+```r
+library(tidyverse)
+```
+
+```
+## Loading tidyverse: tibble
+## Loading tidyverse: tidyr
+## Loading tidyverse: readr
+## Loading tidyverse: purrr
+## Loading tidyverse: dplyr
+```
+
+```
+## Conflicts with tidy packages ----------------------------------------------
+```
+
+```
+## filter(): dplyr, stats
+## lag():    dplyr, stats
+## recode(): dplyr, car
+## select(): dplyr, MASS
+## some():   purrr, car
+```
+
+```r
+predictors <- colnames(Boston)[-1]
+lmfits <- map(predictors,function(x) lm(crim ~ get(x), data=Boston))
+lmsummaries <- lapply(lmfits,summary)
+names(lmsummaries) <- predictors
+simple.estimates <- sapply(lmsummaries, function(x) x$coefficients["get(x)","Estimate"])
+simple.estimates
+```
+
+```
+##          zn       indus        chas         nox          rm         age 
+## -0.07393498  0.50977633 -1.89277655 31.24853120 -2.68405122  0.10778623 
+##         dis         rad         tax     ptratio       black       lstat 
+## -1.55090168  0.61791093  0.02974225  1.15198279 -0.03627964  0.54880478 
+##        medv 
+## -0.36315992
+```
+
+```r
+simple.df <- ldply(simple.estimates, data.frame)
+```
+
+```
+## Error in eval(expr, envir, enclos): could not find function "ldply"
+```
+
+```r
+colnames(simple.df) <- c("P","Simple")
+```
+
+```
+## Error in colnames(simple.df) <- c("P", "Simple"): object 'simple.df' not found
+```
+
+```r
+multiple.all <- summary.all$coefficients
+```
+
+```
+## Error in eval(expr, envir, enclos): object 'summary.all' not found
+```
+
+```r
+multiple.all.df <- adply(multiple.all, 1, c)
+```
+
+```
+## Error in eval(expr, envir, enclos): could not find function "adply"
+```
+
+```r
+colnames(multiple.all.df)[1] <- "P"
+```
+
+```
+## Error in colnames(multiple.all.df)[1] <- "P": object 'multiple.all.df' not found
+```
+
+```r
+colnames(multiple.all.df)[2] <- "Multiple"
+```
+
+```
+## Error in colnames(multiple.all.df)[2] <- "Multiple": object 'multiple.all.df' not found
+```
+
+```r
+multiple2 <- filter(multiple.all.df, P != "(Intercept)")
+```
+
+```
+## Error in filter(multiple.all.df, P != "(Intercept)"): object 'multiple.all.df' not found
+```
+
+```r
+multiple3 <- select(multiple2, P, Multiple)
+```
+
+```
+## Error in select(multiple2, P, Multiple): object 'multiple2' not found
+```
+
+```r
+data <- merge(simple.df, multiple3, ID = "P")
+```
+
+```
+## Error in merge(simple.df, multiple3, ID = "P"): object 'simple.df' not found
+```
+
+```r
+ggplot(data, aes(x=Simple, y=Multiple)) + geom_point()
+```
+
+```
+## Error in if (is.waive(data) || empty(data)) return(cbind(data, PANEL = integer(0))): missing value where TRUE/FALSE needed
+```
+
+![](Chapter3_files/figure-html/unnamed-chunk-79-1.png)<!-- -->
+
+The coefficients are not very similar.
+
+(d) Is there evidence of non-linear association between any of the predictors and the response? To answer this question, for each
+predictor X, fit a model of the form
+
+
+```r
+lmfits2 <- map(predictors,function(x) lm(crim ~ I(), data=Boston))
+```
+
+```
+## Error in unique(c("AsIs", oldClass(x))): argument "x" is missing, with no default
+```
+
+```r
+lmsummaries2 <- lapply(lmfits2,summary)
+```
+
+```
+## Error in lapply(lmfits2, summary): object 'lmfits2' not found
+```
+
+```r
+names(lmsummaries2) <- predictors
+```
+
+```
+## Error in names(lmsummaries2) <- predictors: object 'lmsummaries2' not found
+```
+
+```r
+lmsummaries2
+```
+
+```
+## Error in eval(expr, envir, enclos): object 'lmsummaries2' not found
+```
+This doesn't work.

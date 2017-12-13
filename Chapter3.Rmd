@@ -8,6 +8,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(error =  TRUE)
 ```
 
 ```{r}
@@ -146,6 +147,10 @@ summary(interact.2)
 ```
 
 ##Questions
+** 1. Describe the null hypotheses to which the p-values given in Table 3.4 correspond. Explain what conclusions you can draw based on these p-values. Your explanation should be phrased in terms of sales , TV, radio , and newspaper , rather than in terms of the coeffi cients of the linear model.**
+
+The intercept corresponds to the null hypothesis that the intercept is 0 – that is if the predictors were 0, then we would see 0 sales. For TV, radio, and newspaper, the null hypothesis is that each of the media don’t have a significant effect (negative or positive) on sales. Based on the P values and the coefficients, both TV and radio have a significant positive effect on sales, with radio having the largest impact. The model does however omit interaction terms, which could be important for showing a synergy between the two media. Newspaper did not have a positive effect.
+
 
 **8.This question involves the use of simple linear regression on the Auto data set.**
 
@@ -242,7 +247,7 @@ par(mfrow=c(2,2))
 plot(auto.lm2)
 ``` 
 
-The pattern is not totally random - it looks like points 323 and 327 could be particularly problematic. Point 14 seems to have high everage.
+The pattern is not totally random - it looks like points 323 and 327 could be particularly problematic. Point 14 seems to have high leverage.
 
 (e) Use the * and : symbols to fit linear regression models with interaction effects. Do any interactions appear to be statistically significant?
 
@@ -625,4 +630,53 @@ plot(tax, crim)
 abline(tax.lm)
 ```
 
+(b) Fit a multiple regression model to predict the response using all of the predictors. Describe your results. For which predictors can we reject the null hypothesis H0 : βj = 0?
 
+```{r}
+crim.all.lm <- lm(crim ~ ., data= Boston)
+summary(crim.all.lm)
+```
+
+Zn, indus, dis, raw, black, and medv are significant.
+
+(c) How do your results from (a) compare to your results from (b)? Create a plot displaying the univariate regression coefficients
+from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis. That is, each predictor is displayed as a
+single point in the plot. Its coefficient in a simple linear regression model is shown on the x-axis, and its coefficient estimate
+in the multiple linear regression model is shown on the y-axis.
+
+```{r}
+library(tidyverse)
+predictors <- colnames(Boston)[-1]
+lmfits <- map(predictors,function(x) lm(crim ~ get(x), data=Boston))
+lmsummaries <- lapply(lmfits,summary)
+names(lmsummaries) <- predictors
+simple.estimates <- sapply(lmsummaries, function(x) x$coefficients["get(x)","Estimate"])
+simple.estimates
+simple.df <- ldply(simple.estimates, data.frame)
+colnames(simple.df) <- c("P","Simple")
+
+multiple.all <- summary.all$coefficients
+multiple.all.df <- adply(multiple.all, 1, c)
+colnames(multiple.all.df)[1] <- "P"
+colnames(multiple.all.df)[2] <- "Multiple"
+multiple2 <- filter(multiple.all.df, P != "(Intercept)")
+multiple3 <- select(multiple2, P, Multiple)
+
+data <- merge(simple.df, multiple3, ID = "P")
+
+ggplot(data, aes(x=Simple, y=Multiple)) + geom_point()
+
+```
+
+The coefficients are not very similar.
+
+(d) Is there evidence of non-linear association between any of the predictors and the response? To answer this question, for each
+predictor X, fit a model of the form
+
+```{r}
+lmfits2 <- map(predictors,function(x) lm(crim ~ I(), data=Boston))
+lmsummaries2 <- lapply(lmfits2,summary)
+names(lmsummaries2) <- predictors
+lmsummaries2
+```
+This doesn't work.
