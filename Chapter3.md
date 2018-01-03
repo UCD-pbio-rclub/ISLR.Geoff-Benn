@@ -6,6 +6,7 @@
 ```r
 library(MASS)
 library(ISLR)
+library(plyr)
 ```
 
 ##Linear Regression
@@ -536,6 +537,58 @@ summary(interact.2)
 ** 1. Describe the null hypotheses to which the p-values given in Table 3.4 correspond. Explain what conclusions you can draw based on these p-values. Your explanation should be phrased in terms of sales , TV, radio , and newspaper , rather than in terms of the coeffi cients of the linear model.**
 
 The intercept corresponds to the null hypothesis that the intercept is 0 – that is if the predictors were 0, then we would see 0 sales. For TV, radio, and newspaper, the null hypothesis is that each of the media don’t have a significant effect (negative or positive) on sales. Based on the P values and the coefficients, both TV and radio have a significant positive effect on sales, with radio having the largest impact. The model does however omit interaction terms, which could be important for showing a synergy between the two media. Newspaper did not have a positive effect.
+
+**2. Carefully explain the differences between the KNN classifier and KNN regression methods.** 
+
+In the classifier, you look at the K points nearest your value and then classify K based on the class of the majority of the K points. In regression method, you take the average of the response variable for the K points nearest your value. 
+
+
+**3. Suppose we have a data set with five predictors, X1  = GPA, X2  = IQ, X3  = Gender (1 for Female and 0 for Male), X4  = Interaction between GPA and IQ, and X5  = Interaction between GPA and Gender. The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get ˆβ0  = 50,  ˆβ1  = 20,  ˆβ2  = 0. 07,  ˆβ3  = 35,  ˆβ4  = 0. 01,  ˆβ5  = − 10.**
+
+(a)	Which answer is correct, and why?
+
+Salary = 50 + (20 + .01 x IQ) x GPA + .07 x IQ + (35 + -10 x GPA) x Gender
+
+
+i. For a fixed value of IQ and GPA, males earn more on average than females.
+ii. For a fixed value of IQ and GPA, females earn more on average than males.
+iii. For a fixed value of IQ and GPA, males earn more on average than females provided that the GPA is high enough.
+iv. For a fixed value of IQ and GPA, females earn more on average than males provided that the GPA is high enough.
+
+iii should be correct. The B3 term is .35 when X3 is 1, so females will earn more than male graduates as long as GPA is less than 3.5.
+
+
+b) Predict the salary of a female with IQ of 110 and a GPA of 4. 0.
+
+Salary = 50 + (20 + .01 x 110) x 4.0 + .07 x 110 + (35 + -10 x 4.0) x 1
+
+Salary = 50 + 84.4 + 7.7 – 5 = 137.1
+
+Or 50 + 4.0*20 + .07*110 + 35*1 + .01(110*4) + -10(1*4)
+
+Salary = 50 + 80 + 7.7 + 35 + 4.4 -40 = 
+
+(c) True or false: Since the coefficient for the GPA/IQ interaction term is very small, there is very little evidence of an interaction effect. Justify your answer.
+
+False – we would need to see the p-value for the interaction. I would also want to look at collinearity between the two predictors, as I suspect they may be related.
+
+**4. I collect a set of data (n  = 100 observations) containing a single predictor and a quantitative response. I then fit a linear regression model to the data, as well as a separate cubic regression, i.e. Y  = β0  + β1X  + β2X2  + β3X3  + ϵ .**
+
+(a) Suppose that the true relationship between X and Y is linear, i.e. Y  = β0  + β1X  + ϵ . Consider the training residual sum of squares (RSS) for the linear regression, and also the training RSS for the cubic regression. Would we expect one to be lower than the other, would we expect them to be the same, or is there not enough information to tell? Justify your answer.
+
+We would expect the cubic RSS to be slightly  lower, as adding additional terms will always reduce the training RSS.
+
+(b) Answer (a) using test rather than training RSS.
+
+The test RSS would be equal or maybe slightly lower.
+
+(c) Suppose that the true relationship between X and Y is not linear, but we don’t know how far it is from linear. Consider the training RSS for the linear regression, and also the training RSS for the cubic regression. Would we expect one to be lower than the other, would we expect them to be the same, or is there not enough information to tell? Justify your answer.
+
+Given that it’s non-linear, we would expect the cubic regression to fit the data better, leading to a lower RSS with training data.
+
+(d) Answer (c) using test rather than training RSS.
+
+Not clear – if the training data is representative and we’re not over-fitting, then the cubic will have a lower test RSS, but if that’s not true then it could be higher.
 
 
 **8.This question involves the use of simple linear regression on the Auto data set.**
@@ -1530,7 +1583,7 @@ X2 is a significant predictor.
 
 (f) Do the results obtained in (c)–(e) contradict each other? Explain your answer.
 
-Yes - X2 was not significant in the combined model, but was significant alone.
+Yes - X2 was not significant in the combined model, but was significant alone. This is likely due to the two predictors being collinear - the VIF is moderately high and they're well correlated.
 
 
 ```r
@@ -1542,6 +1595,115 @@ vif(twelve.lm1)
 ##       x1       x2 
 ## 3.304993 3.304993
 ```
+
+(g) Now suppose we obtain one additional observation, which was unfortunately mismeasured.
+
+
+```r
+x1 = c(x1, 0.1)
+x2 = c(x2, 0.8)
+y = c(y, 6)
+
+plot(x1, y)
+```
+
+![](Chapter3_files/figure-html/unnamed-chunk-61-1.png)<!-- -->
+
+```r
+plot(x2, y)
+```
+
+![](Chapter3_files/figure-html/unnamed-chunk-61-2.png)<!-- -->
+
+```r
+twelve.lm1 <- update(lm(y ~ x1 + x2))
+summary(twelve.lm1)
+```
+
+```
+## 
+## Call:
+## lm(formula = y ~ x1 + x2)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.73348 -0.69318 -0.05263  0.66385  2.30619 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)   2.2267     0.2314   9.624 7.91e-16 ***
+## x1            0.5394     0.5922   0.911  0.36458    
+## x2            2.5146     0.8977   2.801  0.00614 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.075 on 98 degrees of freedom
+## Multiple R-squared:  0.2188,	Adjusted R-squared:  0.2029 
+## F-statistic: 13.72 on 2 and 98 DF,  p-value: 5.564e-06
+```
+
+```r
+par(mfrow=c(2,2))
+plot(twelve.lm1)
+```
+
+![](Chapter3_files/figure-html/unnamed-chunk-61-3.png)<!-- -->
+
+```r
+twelve.lm2 <- update(lm(y ~ x1))
+summary(twelve.lm2)
+```
+
+```
+## 
+## Call:
+## lm(formula = y ~ x1)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -2.8897 -0.6556 -0.0909  0.5682  3.5665 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)   2.2569     0.2390   9.445 1.78e-15 ***
+## x1            1.7657     0.4124   4.282 4.29e-05 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.111 on 99 degrees of freedom
+## Multiple R-squared:  0.1562,	Adjusted R-squared:  0.1477 
+## F-statistic: 18.33 on 1 and 99 DF,  p-value: 4.295e-05
+```
+
+```r
+twelve.lm3 <- update(lm(y ~ x2))
+summary(twelve.lm3)
+```
+
+```
+## 
+## Call:
+## lm(formula = y ~ x2)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.64729 -0.71021 -0.06899  0.72699  2.38074 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)   2.3451     0.1912  12.264  < 2e-16 ***
+## x2            3.1190     0.6040   5.164 1.25e-06 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.074 on 99 degrees of freedom
+## Multiple R-squared:  0.2122,	Adjusted R-squared:  0.2042 
+## F-statistic: 26.66 on 1 and 99 DF,  p-value: 1.253e-06
+```
+
+For the model with both terms, now x2 is significant and x1 isn't. We can see from the plot that the new observation (101) is a high leverage point. It is a weak outlier for X1 and strong high-leverage point for X2.
+
+For the x1 alone model, x1 is still significant, but the estimate and p-value have changed. Ditto for x2.
 
 **15. This problem involves the Boston data set, which we saw in the lab for this chapter. We will now try to predict per capita crime rate using the other variables in this data set. In other words, per capita crime rate is the response, and the other variables are the predictors.**
 
@@ -1958,7 +2120,7 @@ plot(rad, crim)
 abline(rad.lm)
 ```
 
-![](Chapter3_files/figure-html/unnamed-chunk-76-1.png)<!-- -->
+![](Chapter3_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
 
 
 ```r
@@ -1966,7 +2128,7 @@ plot(tax, crim)
 abline(tax.lm)
 ```
 
-![](Chapter3_files/figure-html/unnamed-chunk-77-1.png)<!-- -->
+![](Chapter3_files/figure-html/unnamed-chunk-78-1.png)<!-- -->
 
 (b) Fit a multiple regression model to predict the response using all of the predictors. Describe your results. For which predictors can we reject the null hypothesis H0 : βj = 0?
 
@@ -2034,11 +2196,20 @@ library(tidyverse)
 ```
 
 ```
-## filter(): dplyr, stats
-## lag():    dplyr, stats
-## recode(): dplyr, car
-## select(): dplyr, MASS
-## some():   purrr, car
+## arrange():   dplyr, plyr
+## compact():   purrr, plyr
+## count():     dplyr, plyr
+## failwith():  dplyr, plyr
+## filter():    dplyr, stats
+## id():        dplyr, plyr
+## lag():       dplyr, stats
+## mutate():    dplyr, plyr
+## recode():    dplyr, car
+## rename():    dplyr, plyr
+## select():    dplyr, MASS
+## some():      purrr, car
+## summarise(): dplyr, plyr
+## summarize(): dplyr, plyr
 ```
 
 ```r
@@ -2061,85 +2232,23 @@ simple.estimates
 
 ```r
 simple.df <- ldply(simple.estimates, data.frame)
-```
-
-```
-## Error in eval(expr, envir, enclos): could not find function "ldply"
-```
-
-```r
 colnames(simple.df) <- c("P","Simple")
-```
 
-```
-## Error in colnames(simple.df) <- c("P", "Simple"): object 'simple.df' not found
-```
+summary.all <- summary(crim.all.lm)
 
-```r
 multiple.all <- summary.all$coefficients
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'summary.all' not found
-```
-
-```r
 multiple.all.df <- adply(multiple.all, 1, c)
-```
-
-```
-## Error in eval(expr, envir, enclos): could not find function "adply"
-```
-
-```r
 colnames(multiple.all.df)[1] <- "P"
-```
-
-```
-## Error in colnames(multiple.all.df)[1] <- "P": object 'multiple.all.df' not found
-```
-
-```r
 colnames(multiple.all.df)[2] <- "Multiple"
-```
-
-```
-## Error in colnames(multiple.all.df)[2] <- "Multiple": object 'multiple.all.df' not found
-```
-
-```r
 multiple2 <- filter(multiple.all.df, P != "(Intercept)")
-```
-
-```
-## Error in filter(multiple.all.df, P != "(Intercept)"): object 'multiple.all.df' not found
-```
-
-```r
 multiple3 <- select(multiple2, P, Multiple)
-```
 
-```
-## Error in select(multiple2, P, Multiple): object 'multiple2' not found
-```
-
-```r
 data <- merge(simple.df, multiple3, ID = "P")
-```
 
-```
-## Error in merge(simple.df, multiple3, ID = "P"): object 'simple.df' not found
-```
-
-```r
 ggplot(data, aes(x=Simple, y=Multiple)) + geom_point()
 ```
 
-```
-## Error in if (is.waive(data) || empty(data)) return(cbind(data, PANEL = integer(0))): missing value where TRUE/FALSE needed
-```
-
-![](Chapter3_files/figure-html/unnamed-chunk-79-1.png)<!-- -->
+![](Chapter3_files/figure-html/unnamed-chunk-80-1.png)<!-- -->
 
 The coefficients are not very similar.
 
@@ -2148,34 +2257,9 @@ predictor X, fit a model of the form
 
 
 ```r
-lmfits2 <- map(predictors,function(x) lm(crim ~ I(), data=Boston))
-```
-
-```
-## Error in unique(c("AsIs", oldClass(x))): argument "x" is missing, with no default
-```
-
-```r
-lmsummaries2 <- lapply(lmfits2,summary)
-```
-
-```
-## Error in lapply(lmfits2, summary): object 'lmfits2' not found
-```
-
-```r
-names(lmsummaries2) <- predictors
-```
-
-```
-## Error in names(lmsummaries2) <- predictors: object 'lmsummaries2' not found
-```
-
-```r
-lmsummaries2
-```
-
-```
-## Error in eval(expr, envir, enclos): object 'lmsummaries2' not found
+#lmfits2 <- map(predictors,function(x) lm(crim ~ I(), data=Boston))
+#lmsummaries2 <- lapply(lmfits2,summary)
+#names(lmsummaries2) <- predictors
+#lmsummaries2
 ```
 This doesn't work.
