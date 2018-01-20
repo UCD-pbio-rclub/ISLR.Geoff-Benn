@@ -74,6 +74,18 @@ table(glm.pred2,test$Direction)
 (9+56)/104
 ```
 
+**(e) Repeat (d) using LDA.**
+```{r}
+library(MASS)
+train.lda <- lda(Direction ~ Lag2, data = training)
+train.lda
+lda.pred <- predict(train.lda, test)
+lda.class=lda.pred$class
+table(lda.class,test$Direction)
+(9+56)/104
+```
+
+Exactly the same result as my logistic regraion above!
 
 **11. In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.**
 
@@ -106,6 +118,25 @@ auto.train <- filter(auto, rand < 197)
 auto.test <- filter(auto, rand > 196)
 ```
 
+**(d) Perform LDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in
+(b). What is the test error of the model obtained?**
+
+```{r}
+auto.lda1 <- lda(mpg01 ~ mpg, data = auto.train)
+auto.lda1
+auto.lda.pred1 <- predict(auto.lda1, auto.test)
+auto.lda1.class=auto.lda.pred1$class
+table(auto.lda1.class,auto.test$mpg01)
+(107+84)/196
+
+auto.lda2 <- lda(mpg01 ~ horsepower + weight + acceleration, data = auto.train)
+auto.lda2
+auto.lda.pred2 <- predict(auto.lda2, auto.test)
+auto.lda2.class=auto.lda.pred2$class
+table(auto.lda2.class,auto.test$mpg01)
+(78+89)/196
+```
+LDA works with near-perfect predictors - the first model with mpg as predictor was 97% accurate. With horsepower, weight, and acceleration LDA was 85% accurate - slightly better than logistic regression with the same predictors.
 
 **(f) Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?**
 

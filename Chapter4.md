@@ -217,6 +217,68 @@ table(glm.pred2,test$Direction)
 ## [1] 0.625
 ```
 
+**(e) Repeat (d) using LDA.**
+
+```r
+library(MASS)
+```
+
+```
+## 
+## Attaching package: 'MASS'
+```
+
+```
+## The following object is masked from 'package:dplyr':
+## 
+##     select
+```
+
+```r
+train.lda <- lda(Direction ~ Lag2, data = training)
+train.lda
+```
+
+```
+## Call:
+## lda(Direction ~ Lag2, data = training)
+## 
+## Prior probabilities of groups:
+##      Down        Up 
+## 0.4477157 0.5522843 
+## 
+## Group means:
+##             Lag2
+## Down -0.03568254
+## Up    0.26036581
+## 
+## Coefficients of linear discriminants:
+##            LD1
+## Lag2 0.4414162
+```
+
+```r
+lda.pred <- predict(train.lda, test)
+lda.class=lda.pred$class
+table(lda.class,test$Direction)
+```
+
+```
+##          
+## lda.class Down Up
+##      Down    9  5
+##      Up     34 56
+```
+
+```r
+(9+56)/104
+```
+
+```
+## [1] 0.625
+```
+
+Exactly the same result as my logistic regraion above!
 
 **11. In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.**
 
@@ -248,7 +310,7 @@ Describe your findings.**
 pairs(auto)
 ```
 
-![](Chapter4_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](Chapter4_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 Obviously, mpg will be useful, but otherwise it looks like horsepower, weight, and acceleration should be helpful.
 
@@ -261,6 +323,100 @@ auto.train <- filter(auto, rand < 197)
 auto.test <- filter(auto, rand > 196)
 ```
 
+**(d) Perform LDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in
+(b). What is the test error of the model obtained?**
+
+
+```r
+auto.lda1 <- lda(mpg01 ~ mpg, data = auto.train)
+auto.lda1
+```
+
+```
+## Call:
+## lda(mpg01 ~ mpg, data = auto.train)
+## 
+## Prior probabilities of groups:
+##         0         1 
+## 0.4591837 0.5408163 
+## 
+## Group means:
+##        mpg
+## 0 17.23222
+## 1 30.13208
+## 
+## Coefficients of linear discriminants:
+##           LD1
+## mpg 0.2257402
+```
+
+```r
+auto.lda.pred1 <- predict(auto.lda1, auto.test)
+auto.lda1.class=auto.lda.pred1$class
+table(auto.lda1.class,auto.test$mpg01)
+```
+
+```
+##                
+## auto.lda1.class   0   1
+##               0 106   7
+##               1   0  83
+```
+
+```r
+(107+84)/196
+```
+
+```
+## [1] 0.9744898
+```
+
+```r
+auto.lda2 <- lda(mpg01 ~ horsepower + weight + acceleration, data = auto.train)
+auto.lda2
+```
+
+```
+## Call:
+## lda(mpg01 ~ horsepower + weight + acceleration, data = auto.train)
+## 
+## Prior probabilities of groups:
+##         0         1 
+## 0.4591837 0.5408163 
+## 
+## Group means:
+##   horsepower   weight acceleration
+## 0  126.75556 3602.089     15.03778
+## 1   78.16038 2277.311     16.26792
+## 
+## Coefficients of linear discriminants:
+##                       LD1
+## horsepower    0.001190949
+## weight       -0.001926278
+## acceleration -0.022892869
+```
+
+```r
+auto.lda.pred2 <- predict(auto.lda2, auto.test)
+auto.lda2.class=auto.lda.pred2$class
+table(auto.lda2.class,auto.test$mpg01)
+```
+
+```
+##                
+## auto.lda2.class  0  1
+##               0 85  8
+##               1 21 82
+```
+
+```r
+(78+89)/196
+```
+
+```
+## [1] 0.8520408
+```
+LDA works with near-perfect predictors - the first model with mpg as predictor was 97% accurate. With horsepower, weight, and acceleration LDA was 85% accurate - slightly better than logistic regression with the same predictors.
 
 **(f) Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?**
 
@@ -280,23 +436,23 @@ summary(auto.glm2)
 ##     data = auto.train)
 ## 
 ## Deviance Residuals: 
-##      Min        1Q    Median        3Q       Max  
-## -2.33309  -0.18846   0.03323   0.34511   3.01500  
+##     Min       1Q   Median       3Q      Max  
+## -2.2715  -0.1661   0.1009   0.3082   2.7706  
 ## 
 ## Coefficients:
 ##                Estimate Std. Error z value Pr(>|z|)    
-## (Intercept)  14.1483865  3.9910686   3.545 0.000393 ***
-## horsepower   -0.0517354  0.0275011  -1.881 0.059943 .  
-## weight       -0.0030095  0.0008114  -3.709 0.000208 ***
-## acceleration -0.0275287  0.1762703  -0.156 0.875897    
+## (Intercept)  17.0418657  4.1593058   4.097 4.18e-05 ***
+## horsepower   -0.0603903  0.0302816  -1.994 0.046121 *  
+## weight       -0.0032836  0.0008721  -3.765 0.000166 ***
+## acceleration -0.1202993  0.1730982  -0.695 0.487070    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 271.71  on 195  degrees of freedom
-## Residual deviance: 108.96  on 192  degrees of freedom
-## AIC: 116.96
+##     Null deviance: 270.406  on 195  degrees of freedom
+## Residual deviance:  97.385  on 192  degrees of freedom
+## AIC: 105.39
 ## 
 ## Number of Fisher Scoring iterations: 7
 ```
@@ -311,8 +467,8 @@ table(auto.pred,auto.test$mpg01)
 ```
 ##          
 ## auto.pred  0  1
-##         0 83  6
-##         1 15 92
+##         0 93 12
+##         1 13 78
 ```
 
 ```r
