@@ -232,13 +232,13 @@ table(glm.pred,Weekly$Direction)</code></pre>
 <pre><code>## Conflicts with tidy packages ----------------------------------------------</code></pre>
 <pre><code>## filter(): dplyr, stats
 ## lag():    dplyr, stats</code></pre>
-<pre class="r"><code>training &lt;- filter(Weekly, Year &lt; 2009)
-test &lt;- filter(Weekly, Year &gt; 2008)
-train.glm &lt;- glm(Direction ~ Lag2, data = training, family = binomial)
+<pre class="r"><code>training.sm &lt;- filter(Weekly, Year &lt; 2009)
+test.sm &lt;- filter(Weekly, Year &gt; 2008)
+train.glm &lt;- glm(Direction ~ Lag2, data = training.sm, family = binomial)
 summary(train.glm)</code></pre>
 <pre><code>## 
 ## Call:
-## glm(formula = Direction ~ Lag2, family = binomial, data = training)
+## glm(formula = Direction ~ Lag2, family = binomial, data = training.sm)
 ## 
 ## Deviance Residuals: 
 ##    Min      1Q  Median      3Q     Max  
@@ -258,10 +258,10 @@ summary(train.glm)</code></pre>
 ## AIC: 1354.5
 ## 
 ## Number of Fisher Scoring iterations: 4</code></pre>
-<pre class="r"><code>glm.probs2 &lt;- predict(train.glm,test,type=&quot;response&quot;)
+<pre class="r"><code>glm.probs2 &lt;- predict(train.glm,test.sm,type=&quot;response&quot;)
 glm.pred2 &lt;- rep(&quot;Down&quot;,104)
 glm.pred2[glm.probs2&gt;.5]=&quot;Up&quot;
-table(glm.pred2,test$Direction)</code></pre>
+table(glm.pred2,test.sm$Direction)</code></pre>
 <pre><code>##          
 ## glm.pred2 Down Up
 ##      Down    9  5
@@ -275,10 +275,10 @@ table(glm.pred2,test$Direction)</code></pre>
 <pre><code>## The following object is masked from 'package:dplyr':
 ## 
 ##     select</code></pre>
-<pre class="r"><code>train.lda &lt;- lda(Direction ~ Lag2, data = training)
+<pre class="r"><code>train.lda &lt;- lda(Direction ~ Lag2, data = training.sm)
 train.lda</code></pre>
 <pre><code>## Call:
-## lda(Direction ~ Lag2, data = training)
+## lda(Direction ~ Lag2, data = training.sm)
 ## 
 ## Prior probabilities of groups:
 ##      Down        Up 
@@ -292,9 +292,9 @@ train.lda</code></pre>
 ## Coefficients of linear discriminants:
 ##            LD1
 ## Lag2 0.4414162</code></pre>
-<pre class="r"><code>lda.pred &lt;- predict(train.lda, test)
+<pre class="r"><code>lda.pred &lt;- predict(train.lda, test.sm)
 lda.class=lda.pred$class
-table(lda.class,test$Direction)</code></pre>
+table(lda.class,test.sm$Direction)</code></pre>
 <pre><code>##          
 ## lda.class Down Up
 ##      Down    9  5
@@ -304,10 +304,10 @@ table(lda.class,test$Direction)</code></pre>
 <p>Exactly the same result as my logistic regraion above!</p>
 <p><strong>(f) Repeat (d) using QDA.</strong></p>
 <pre class="r"><code>library(MASS)
-train.qda &lt;- qda(Direction ~ Lag2, data = training)
+train.qda &lt;- qda(Direction ~ Lag2, data = training.sm)
 train.qda</code></pre>
 <pre><code>## Call:
-## qda(Direction ~ Lag2, data = training)
+## qda(Direction ~ Lag2, data = training.sm)
 ## 
 ## Prior probabilities of groups:
 ##      Down        Up 
@@ -317,9 +317,9 @@ train.qda</code></pre>
 ##             Lag2
 ## Down -0.03568254
 ## Up    0.26036581</code></pre>
-<pre class="r"><code>qda.pred &lt;- predict(train.qda, test)
+<pre class="r"><code>qda.pred &lt;- predict(train.qda, test.sm)
 qda.class=qda.pred$class
-table(qda.class,test$Direction)</code></pre>
+table(qda.class,test.sm$Direction)</code></pre>
 <pre><code>##          
 ## qda.class Down Up
 ##      Down    0  0
@@ -328,18 +328,18 @@ table(qda.class,test$Direction)</code></pre>
 <pre><code>## [1] 0.5865385</code></pre>
 <p>58% accuracy - better than LDA. However, it seems to have done it by always predicting up.</p>
 <p><strong>(g) Repeat (d) using KNN with K = 1.</strong></p>
-<pre class="r"><code>train.lag2.scaled &lt;- scale(select(training, Lag2))</code></pre>
-<pre><code>## Error in select(training, Lag2): unused argument (Lag2)</code></pre>
-<pre class="r"><code>test.lag2.scaled &lt;- scale(select(test, Lag2))</code></pre>
-<pre><code>## Error in select(test, Lag2): unused argument (Lag2)</code></pre>
-<pre class="r"><code>train.y &lt;- training$Direction
-test.y &lt;- test$Direction
+<pre class="r"><code>train.lag2.scaled &lt;- scale(dplyr::select(training.sm, Lag2))
+test.lag2.scaled &lt;- scale(dplyr::select(test.sm, Lag2))
+train.y &lt;- training.sm$Direction
+test.y &lt;- test.sm$Direction
 set.seed(1)
 library(class)
-knn.pred1 &lt;- knn(train.lag2.scaled, test.lag2.scaled, train.y, k=1)</code></pre>
-<pre><code>## Error in as.matrix(train): object 'train.lag2.scaled' not found</code></pre>
-<pre class="r"><code>table(knn.pred1,test.y)</code></pre>
-<pre><code>## Error in table(knn.pred1, test.y): object 'knn.pred1' not found</code></pre>
+knn.pred1 &lt;- knn(train.lag2.scaled, test.lag2.scaled, train.y, k=1)
+table(knn.pred1,test.y)</code></pre>
+<pre><code>##          test.y
+## knn.pred1 Down Up
+##      Down   15 25
+##      Up     28 36</code></pre>
 <pre class="r"><code>(15+36)/104</code></pre>
 <pre><code>## [1] 0.4903846</code></pre>
 <p>49% accuracy!</p>
@@ -347,26 +347,26 @@ knn.pred1 &lt;- knn(train.lag2.scaled, test.lag2.scaled, train.y, k=1)</code></p
 <p>Logistic regression and LDA were best.</p>
 <p><strong>(i) Experiment with different combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.</strong></p>
 <p>KNN with all variables as predictors:</p>
-<pre class="r"><code>train.scaled &lt;- scale(select(training, -Direction, -Today))</code></pre>
-<pre><code>## Error in select(training, -Direction, -Today): unused arguments (-Direction, -Today)</code></pre>
-<pre class="r"><code>test.scaled &lt;- scale(select(test, -Direction, -Today))</code></pre>
-<pre><code>## Error in select(test, -Direction, -Today): unused arguments (-Direction, -Today)</code></pre>
-<pre class="r"><code>train.y &lt;- training$Direction
-test.y &lt;- test$Direction
+<pre class="r"><code>train.scaled &lt;- scale(dplyr::select(training.sm, -Direction, -Today))
+test.scaled &lt;- scale(dplyr::select(test.sm, -Direction, -Today))
+train.y &lt;- training.sm$Direction
+test.y &lt;- test.sm$Direction
 set.seed(1)
 library(class)
-knn.pred1 &lt;- knn(train.scaled, test.scaled, train.y, k=1)</code></pre>
-<pre><code>## Error in as.matrix(train): object 'train.scaled' not found</code></pre>
-<pre class="r"><code>table(knn.pred1,test.y)</code></pre>
-<pre><code>## Error in table(knn.pred1, test.y): object 'knn.pred1' not found</code></pre>
+knn.pred1 &lt;- knn(train.scaled, test.scaled, train.y, k=1)
+table(knn.pred1,test.y)</code></pre>
+<pre><code>##          test.y
+## knn.pred1 Down Up
+##      Down   18 22
+##      Up     25 39</code></pre>
 <pre class="r"><code>(18+39)/104</code></pre>
 <pre><code>## [1] 0.5480769</code></pre>
 <p>54.8% accuracy! This increases to 78% when Today is added (which drives direction)</p>
-<pre class="r"><code>train.lda2 &lt;- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training)</code></pre>
+<pre class="r"><code>train.lda2 &lt;- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training.sm)</code></pre>
 <pre><code>## Warning in lda.default(x, grouping, ...): variables are collinear</code></pre>
 <pre class="r"><code>train.lda2</code></pre>
 <pre><code>## Call:
-## lda(Direction ~ Lag2 + poly(Lag2, 4), data = training)
+## lda(Direction ~ Lag2 + poly(Lag2, 4), data = training.sm)
 ## 
 ## Prior probabilities of groups:
 ##      Down        Up 
@@ -387,9 +387,9 @@ knn.pred1 &lt;- knn(train.scaled, test.scaled, train.y, k=1)</code></pre>
 ## poly(Lag2, 4)2  10.6406187
 ## poly(Lag2, 4)3   7.9789444
 ## poly(Lag2, 4)4 -18.5910093</code></pre>
-<pre class="r"><code>lda.pred2 &lt;- predict(train.lda2, test)
+<pre class="r"><code>lda.pred2 &lt;- predict(train.lda2, test.sm)
 lda.class2=lda.pred2$class
-table(lda.class2,test$Direction)</code></pre>
+table(lda.class2,test.sm$Direction)</code></pre>
 <pre><code>##           
 ## lda.class2 Down Up
 ##       Down    0  0
@@ -418,23 +418,23 @@ auto.lda1</code></pre>
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.4540816 0.5459184 
+## 0.4846939 0.5153061 
 ## 
 ## Group means:
 ##        mpg
-## 0 16.75618
-## 1 30.09720
+## 0 16.68737
+## 1 30.27426
 ## 
 ## Coefficients of linear discriminants:
 ##           LD1
-## mpg 0.2359928</code></pre>
+## mpg 0.2166385</code></pre>
 <pre class="r"><code>auto.lda.pred1 &lt;- predict(auto.lda1, auto.test)
 auto.lda1.class=auto.lda.pred1$class
 table(auto.lda1.class,auto.test$mpg01)</code></pre>
 <pre><code>##                
 ## auto.lda1.class   0   1
-##               0 107   5
-##               1   0  84</code></pre>
+##               0 101   3
+##               1   0  92</code></pre>
 <pre class="r"><code>(107+84)/196</code></pre>
 <pre><code>## [1] 0.9744898</code></pre>
 <pre class="r"><code>auto.lda2 &lt;- lda(mpg01 ~ horsepower + weight + acceleration, data = auto.train)
@@ -444,25 +444,25 @@ auto.lda2</code></pre>
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.4540816 0.5459184 
+## 0.4846939 0.5153061 
 ## 
 ## Group means:
 ##   horsepower   weight acceleration
-## 0  132.56180 3653.618     14.26292
-## 1   78.34579 2320.019     16.45701
+## 0   133.0421 3688.232     14.60316
+## 1    78.0198 2335.347     16.60396
 ## 
 ## Coefficients of linear discriminants:
-##                       LD1
-## horsepower   -0.005727568
-## weight       -0.001566224
-## acceleration  0.035453812</code></pre>
+##                        LD1
+## horsepower   -0.0025927840
+## weight       -0.0016452121
+## acceleration -0.0002233268</code></pre>
 <pre class="r"><code>auto.lda.pred2 &lt;- predict(auto.lda2, auto.test)
 auto.lda2.class=auto.lda.pred2$class
 table(auto.lda2.class,auto.test$mpg01)</code></pre>
 <pre><code>##                
 ## auto.lda2.class  0  1
-##               0 84  2
-##               1 23 87</code></pre>
+##               0 80  4
+##               1 21 91</code></pre>
 <pre class="r"><code>(78+89)/196</code></pre>
 <pre><code>## [1] 0.8520408</code></pre>
 <p>LDA works with near-perfect predictors - the first model with mpg as predictor was 97% accurate. With horsepower, weight, and acceleration LDA was 85% accurate - slightly better than logistic regression with the same predictors.</p>
@@ -474,19 +474,19 @@ auto.qda</code></pre>
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.4540816 0.5459184 
+## 0.4846939 0.5153061 
 ## 
 ## Group means:
 ##   horsepower   weight acceleration
-## 0  132.56180 3653.618     14.26292
-## 1   78.34579 2320.019     16.45701</code></pre>
+## 0   133.0421 3688.232     14.60316
+## 1    78.0198 2335.347     16.60396</code></pre>
 <pre class="r"><code>auto.qda.pred &lt;- predict(auto.qda, auto.test)
 auto.qda.class=auto.qda.pred$class
 table(auto.qda.class,auto.test$mpg01)</code></pre>
 <pre><code>##               
 ## auto.qda.class  0  1
-##              0 86  2
-##              1 21 87</code></pre>
+##              0 85  6
+##              1 16 89</code></pre>
 <pre class="r"><code>(77+91)/196</code></pre>
 <pre><code>## [1] 0.8571429</code></pre>
 <p>85.7% test accuracy rate - slightly better than LDA.</p>
@@ -503,22 +503,22 @@ summary(auto.glm2)</code></pre>
 ## 
 ## Deviance Residuals: 
 ##      Min        1Q    Median        3Q       Max  
-## -2.21139  -0.07478   0.09156   0.30284   2.54316  
+## -2.47932  -0.09535   0.06806   0.28507   2.72484  
 ## 
 ## Coefficients:
 ##               Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)  15.955706   4.071483   3.919  8.9e-05 ***
-## horsepower   -0.068870   0.028361  -2.428 0.015169 *  
-## weight       -0.003027   0.000905  -3.345 0.000823 ***
-## acceleration -0.033785   0.169261  -0.200 0.841790    
+## (Intercept)  14.917019   4.170857   3.576 0.000348 ***
+## horsepower   -0.044957   0.031127  -1.444 0.148655    
+## weight       -0.003865   0.001042  -3.709 0.000208 ***
+## acceleration  0.027026   0.187339   0.144 0.885294    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 270.058  on 195  degrees of freedom
-## Residual deviance:  94.196  on 192  degrees of freedom
-## AIC: 102.2
+##     Null deviance: 271.530  on 195  degrees of freedom
+## Residual deviance:  98.771  on 192  degrees of freedom
+## AIC: 106.77
 ## 
 ## Number of Fisher Scoring iterations: 7</code></pre>
 <pre class="r"><code>auto.probs &lt;- predict(auto.glm2,auto.test,type=&quot;response&quot;)
@@ -527,65 +527,65 @@ auto.pred[auto.probs&gt;.5]=1
 table(auto.pred,auto.test$mpg01)</code></pre>
 <pre><code>##          
 ## auto.pred  0  1
-##         0 89  7
-##         1 18 82</code></pre>
+##         0 87  8
+##         1 14 87</code></pre>
 <pre class="r"><code>1-(75+91)/196</code></pre>
 <pre><code>## [1] 0.1530612</code></pre>
 <p>An assumption of logistic regression is that none of the predictors are perfect, so mpg needs to be excluded. With the three selected variables, we get a 15.3% error rate.</p>
 <p><strong>(g) Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain? Which value of K seems to perform the best on this data set?</strong></p>
-<pre class="r"><code>auto.train.scaled &lt;- scale(select(auto.train, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.test.scaled &lt;- scale(select(auto.test, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.train.y &lt;- auto.train$mpg01
+<pre class="r"><code>auto.train.scaled &lt;- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled &lt;- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
+auto.train.y &lt;- auto.train$mpg01
 auto.test.y &lt;- auto.test$mpg01
 set.seed(1)
-knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=1)</code></pre>
-<pre><code>## Error in as.matrix(train): object 'auto.train.scaled' not found</code></pre>
-<pre class="r"><code>table(knn.pred1,auto.test.y)</code></pre>
-<pre><code>## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found</code></pre>
+knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=1)
+table(knn.pred1,auto.test.y)</code></pre>
+<pre><code>##          auto.test.y
+## knn.pred1  0  1
+##         0 83  9
+##         1 18 86</code></pre>
 <pre class="r"><code>1-((83+79)/196)</code></pre>
 <pre><code>## [1] 0.1734694</code></pre>
 <p>17.3% test error for k=1</p>
-<pre class="r"><code>auto.train.scaled &lt;- scale(select(auto.train, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.test.scaled &lt;- scale(select(auto.test, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.train.y &lt;- auto.train$mpg01
+<pre class="r"><code>auto.train.scaled &lt;- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled &lt;- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
+auto.train.y &lt;- auto.train$mpg01
 auto.test.y &lt;- auto.test$mpg01
 set.seed(1)
-knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=2)</code></pre>
-<pre><code>## Error in as.matrix(train): object 'auto.train.scaled' not found</code></pre>
-<pre class="r"><code>table(knn.pred1,auto.test.y)</code></pre>
-<pre><code>## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found</code></pre>
+knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=2)
+table(knn.pred1,auto.test.y)</code></pre>
+<pre><code>##          auto.test.y
+## knn.pred1  0  1
+##         0 84 16
+##         1 17 79</code></pre>
 <pre class="r"><code>1-((85+76)/196)</code></pre>
 <pre><code>## [1] 0.1785714</code></pre>
 <p>17.9% test error for k=2</p>
-<pre class="r"><code>auto.train.scaled &lt;- scale(select(auto.train, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.test.scaled &lt;- scale(select(auto.test, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.train.y &lt;- auto.train$mpg01
+<pre class="r"><code>auto.train.scaled &lt;- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled &lt;- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
+auto.train.y &lt;- auto.train$mpg01
 auto.test.y &lt;- auto.test$mpg01
 set.seed(1)
-knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=3)</code></pre>
-<pre><code>## Error in as.matrix(train): object 'auto.train.scaled' not found</code></pre>
-<pre class="r"><code>table(knn.pred1,auto.test.y)</code></pre>
-<pre><code>## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found</code></pre>
+knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=3)
+table(knn.pred1,auto.test.y)</code></pre>
+<pre><code>##          auto.test.y
+## knn.pred1  0  1
+##         0 85 11
+##         1 16 84</code></pre>
 <pre class="r"><code>1-((89+83)/196)</code></pre>
 <pre><code>## [1] 0.122449</code></pre>
 <p>12.2% test error for k=3</p>
-<pre class="r"><code>auto.train.scaled &lt;- scale(select(auto.train, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.test.scaled &lt;- scale(select(auto.test, horsepower, weight, acceleration))</code></pre>
-<pre><code>## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)</code></pre>
-<pre class="r"><code>auto.train.y &lt;- auto.train$mpg01
+<pre class="r"><code>auto.train.scaled &lt;- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled &lt;- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
+auto.train.y &lt;- auto.train$mpg01
 auto.test.y &lt;- auto.test$mpg01
 set.seed(1)
-knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=4)</code></pre>
-<pre><code>## Error in as.matrix(train): object 'auto.train.scaled' not found</code></pre>
-<pre class="r"><code>table(knn.pred1,auto.test.y)</code></pre>
-<pre><code>## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found</code></pre>
+knn.pred1 &lt;- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=4)
+table(knn.pred1,auto.test.y)</code></pre>
+<pre><code>##          auto.test.y
+## knn.pred1  0  1
+##         0 85  9
+##         1 16 86</code></pre>
 <pre class="r"><code>1-((87+83)/196)</code></pre>
 <pre><code>## [1] 0.1326531</code></pre>
 <p>13.2% test error for k=4</p>
@@ -607,23 +607,23 @@ summary(boston.glm1)</code></pre>
 ## 
 ## Deviance Residuals: 
 ##      Min        1Q    Median        3Q       Max  
-## -2.89905  -0.62435  -0.04365   0.60769   2.97667  
+## -3.01832  -0.57666  -0.03214   0.60158   3.11160  
 ## 
 ## Coefficients:
 ##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)  6.081309   2.140603   2.841  0.00450 ** 
-## zn          -0.025088   0.014822  -1.693  0.09052 .  
-## indus        0.076613   0.028392   2.698  0.00697 ** 
-## dis         -0.617617   0.124513  -4.960 7.04e-07 ***
-## black       -0.012335   0.005265  -2.343  0.01913 *  
+## (Intercept)  6.692638   2.178599   3.072  0.00213 ** 
+## zn          -0.027440   0.016120  -1.702  0.08871 .  
+## indus        0.074386   0.028344   2.624  0.00868 ** 
+## dis         -0.673921   0.133281  -5.056 4.27e-07 ***
+## black       -0.013493   0.005325  -2.534  0.01127 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 525.34  on 378  degrees of freedom
-## Residual deviance: 306.65  on 374  degrees of freedom
-## AIC: 316.65
+##     Null deviance: 525.40  on 378  degrees of freedom
+## Residual deviance: 297.92  on 374  degrees of freedom
+## AIC: 307.92
 ## 
 ## Number of Fisher Scoring iterations: 7</code></pre>
 <pre class="r"><code>boston.glm.probs1 &lt;- predict(boston.glm1,boston.test,type=&quot;response&quot;)
@@ -632,8 +632,8 @@ boston.pred1[boston.glm.probs1&gt;.5]=1
 table(boston.pred1,boston.test$crime)</code></pre>
 <pre><code>##             
 ## boston.pred1  0  1
-##            0 52 16
-##            1  9 50</code></pre>
+##            0 55 21
+##            1  8 43</code></pre>
 <pre class="r"><code>1-(44+55)/127</code></pre>
 <pre><code>## [1] 0.2204724</code></pre>
 <p>22% error rate for logistic regression.</p>
@@ -645,26 +645,26 @@ boston.lda1</code></pre>
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.5065963 0.4934037 
+## 0.5013193 0.4986807 
 ## 
 ## Group means:
-##          zn     indus      dis    black
-## 0 20.778646  7.103698 5.115574 388.2181
-## 1  1.304813 15.322941 2.495096 321.5521
+##          zn    indus      dis    black
+## 0 20.168421  7.10900 5.016202 388.1484
+## 1  1.068783 15.50656 2.439763 320.3539
 ## 
 ## Coefficients of linear discriminants:
 ##                 LD1
-## zn     2.914518e-05
-## indus  9.010556e-02
-## dis   -3.229196e-01
-## black -3.048644e-03</code></pre>
+## zn    -0.0006021933
+## indus  0.0881035557
+## dis   -0.3427159390
+## black -0.0031011579</code></pre>
 <pre class="r"><code>boston.lda.pred &lt;- predict(boston.lda1, boston.test)
 boston.lda.class = boston.lda.pred$class
 table(boston.lda.class,boston.test$crime)</code></pre>
 <pre><code>##                 
 ## boston.lda.class  0  1
-##                0 55 19
-##                1  6 47</code></pre>
+##                0 55 22
+##                1  8 42</code></pre>
 <pre class="r"><code>1-(47+49)/127</code></pre>
 <pre><code>## [1] 0.2440945</code></pre>
 <p>24.4% error rate for LDA.</p>
@@ -676,31 +676,37 @@ boston.qda1</code></pre>
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.5065963 0.4934037 
+## 0.5013193 0.4986807 
 ## 
 ## Group means:
-##          zn     indus      dis    black
-## 0 20.778646  7.103698 5.115574 388.2181
-## 1  1.304813 15.322941 2.495096 321.5521</code></pre>
+##          zn    indus      dis    black
+## 0 20.168421  7.10900 5.016202 388.1484
+## 1  1.068783 15.50656 2.439763 320.3539</code></pre>
 <pre class="r"><code>boston.qda.pred &lt;- predict(boston.qda1, boston.test)
 boston.qda.class = boston.qda.pred$class
 table(boston.qda.class,boston.test$crime)</code></pre>
 <pre><code>##                 
 ## boston.qda.class  0  1
-##                0 54 14
-##                1  7 52</code></pre>
+##                0 53 18
+##                1 10 46</code></pre>
 <pre class="r"><code>1-(47+53)/127</code></pre>
 <pre><code>## [1] 0.2125984</code></pre>
 <p>21.2% error rate for QDA.</p>
-<p>Getting errors with the intial select commands:</p>
-<pre class="r"><code>#boston.train.scaled &lt;- scale(select(boston.train, zn, idus, dis, black))
-#boston.test.scaled &lt;- scale(dplyr::select(boston.test, zn, idus, dis, black))
-#boston.train.y &lt;- boston.train$crime
-#boston.test.y &lt;- boston.test$crime
-#set.seed(1)
-#knn4.boston.pred &lt;- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
-#table(knn4.boston.pred,boston.test.y)</code></pre>
-<p>13.2% test error for k=4</p>
+<p>KNN with k=4</p>
+<pre class="r"><code>boston.train.scaled &lt;- scale(dplyr::select(boston.train, zn, indus, dis, black))
+boston.test.scaled &lt;- scale(dplyr::select(boston.test, zn, indus, dis, black))
+boston.train.y &lt;- boston.train$crime
+boston.test.y &lt;- boston.test$crime
+set.seed(1)
+knn4.boston.pred &lt;- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
+table(knn4.boston.pred,boston.test.y)</code></pre>
+<pre><code>##                 boston.test.y
+## knn4.boston.pred  0  1
+##                0 61  5
+##                1  2 59</code></pre>
+<pre class="r"><code>(55+61)/127</code></pre>
+<pre><code>## [1] 0.9133858</code></pre>
+<p>9.1% test error for k=4</p>
 
 
 

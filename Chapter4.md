@@ -211,16 +211,16 @@ library(tidyverse)
 ```
 
 ```r
-training <- filter(Weekly, Year < 2009)
-test <- filter(Weekly, Year > 2008)
-train.glm <- glm(Direction ~ Lag2, data = training, family = binomial)
+training.sm <- filter(Weekly, Year < 2009)
+test.sm <- filter(Weekly, Year > 2008)
+train.glm <- glm(Direction ~ Lag2, data = training.sm, family = binomial)
 summary(train.glm)
 ```
 
 ```
 ## 
 ## Call:
-## glm(formula = Direction ~ Lag2, family = binomial, data = training)
+## glm(formula = Direction ~ Lag2, family = binomial, data = training.sm)
 ## 
 ## Deviance Residuals: 
 ##    Min      1Q  Median      3Q     Max  
@@ -243,10 +243,10 @@ summary(train.glm)
 ```
 
 ```r
-glm.probs2 <- predict(train.glm,test,type="response")
+glm.probs2 <- predict(train.glm,test.sm,type="response")
 glm.pred2 <- rep("Down",104)
 glm.pred2[glm.probs2>.5]="Up"
-table(glm.pred2,test$Direction)
+table(glm.pred2,test.sm$Direction)
 ```
 
 ```
@@ -282,13 +282,13 @@ library(MASS)
 ```
 
 ```r
-train.lda <- lda(Direction ~ Lag2, data = training)
+train.lda <- lda(Direction ~ Lag2, data = training.sm)
 train.lda
 ```
 
 ```
 ## Call:
-## lda(Direction ~ Lag2, data = training)
+## lda(Direction ~ Lag2, data = training.sm)
 ## 
 ## Prior probabilities of groups:
 ##      Down        Up 
@@ -305,9 +305,9 @@ train.lda
 ```
 
 ```r
-lda.pred <- predict(train.lda, test)
+lda.pred <- predict(train.lda, test.sm)
 lda.class=lda.pred$class
-table(lda.class,test$Direction)
+table(lda.class,test.sm$Direction)
 ```
 
 ```
@@ -332,13 +332,13 @@ Exactly the same result as my logistic regraion above!
 
 ```r
 library(MASS)
-train.qda <- qda(Direction ~ Lag2, data = training)
+train.qda <- qda(Direction ~ Lag2, data = training.sm)
 train.qda
 ```
 
 ```
 ## Call:
-## qda(Direction ~ Lag2, data = training)
+## qda(Direction ~ Lag2, data = training.sm)
 ## 
 ## Prior probabilities of groups:
 ##      Down        Up 
@@ -351,9 +351,9 @@ train.qda
 ```
 
 ```r
-qda.pred <- predict(train.qda, test)
+qda.pred <- predict(train.qda, test.sm)
 qda.class=qda.pred$class
-table(qda.class,test$Direction)
+table(qda.class,test.sm$Direction)
 ```
 
 ```
@@ -375,39 +375,21 @@ table(qda.class,test$Direction)
 **(g) Repeat (d) using KNN with K = 1.**
 
 ```r
-train.lag2.scaled <- scale(select(training, Lag2))
-```
-
-```
-## Error in select(training, Lag2): unused argument (Lag2)
-```
-
-```r
-test.lag2.scaled <- scale(select(test, Lag2))
-```
-
-```
-## Error in select(test, Lag2): unused argument (Lag2)
-```
-
-```r
-train.y <- training$Direction
-test.y <- test$Direction
+train.lag2.scaled <- scale(dplyr::select(training.sm, Lag2))
+test.lag2.scaled <- scale(dplyr::select(test.sm, Lag2))
+train.y <- training.sm$Direction
+test.y <- test.sm$Direction
 set.seed(1)
 library(class)
 knn.pred1 <- knn(train.lag2.scaled, test.lag2.scaled, train.y, k=1)
-```
-
-```
-## Error in as.matrix(train): object 'train.lag2.scaled' not found
-```
-
-```r
 table(knn.pred1,test.y)
 ```
 
 ```
-## Error in table(knn.pred1, test.y): object 'knn.pred1' not found
+##          test.y
+## knn.pred1 Down Up
+##      Down   15 25
+##      Up     28 36
 ```
 
 ```r
@@ -430,39 +412,21 @@ out data. Note that you should also experiment with values for K in the KNN clas
 KNN with all variables as predictors:
 
 ```r
-train.scaled <- scale(select(training, -Direction, -Today))
-```
-
-```
-## Error in select(training, -Direction, -Today): unused arguments (-Direction, -Today)
-```
-
-```r
-test.scaled <- scale(select(test, -Direction, -Today))
-```
-
-```
-## Error in select(test, -Direction, -Today): unused arguments (-Direction, -Today)
-```
-
-```r
-train.y <- training$Direction
-test.y <- test$Direction
+train.scaled <- scale(dplyr::select(training.sm, -Direction, -Today))
+test.scaled <- scale(dplyr::select(test.sm, -Direction, -Today))
+train.y <- training.sm$Direction
+test.y <- test.sm$Direction
 set.seed(1)
 library(class)
 knn.pred1 <- knn(train.scaled, test.scaled, train.y, k=1)
-```
-
-```
-## Error in as.matrix(train): object 'train.scaled' not found
-```
-
-```r
 table(knn.pred1,test.y)
 ```
 
 ```
-## Error in table(knn.pred1, test.y): object 'knn.pred1' not found
+##          test.y
+## knn.pred1 Down Up
+##      Down   18 22
+##      Up     25 39
 ```
 
 ```r
@@ -476,7 +440,7 @@ table(knn.pred1,test.y)
 
 
 ```r
-train.lda2 <- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training)
+train.lda2 <- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training.sm)
 ```
 
 ```
@@ -489,7 +453,7 @@ train.lda2
 
 ```
 ## Call:
-## lda(Direction ~ Lag2 + poly(Lag2, 4), data = training)
+## lda(Direction ~ Lag2 + poly(Lag2, 4), data = training.sm)
 ## 
 ## Prior probabilities of groups:
 ##      Down        Up 
@@ -513,9 +477,9 @@ train.lda2
 ```
 
 ```r
-lda.pred2 <- predict(train.lda2, test)
+lda.pred2 <- predict(train.lda2, test.sm)
 lda.class2=lda.pred2$class
-table(lda.class2,test$Direction)
+table(lda.class2,test.sm$Direction)
 ```
 
 ```
@@ -584,16 +548,16 @@ auto.lda1
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.4540816 0.5459184 
+## 0.4846939 0.5153061 
 ## 
 ## Group means:
 ##        mpg
-## 0 16.75618
-## 1 30.09720
+## 0 16.68737
+## 1 30.27426
 ## 
 ## Coefficients of linear discriminants:
 ##           LD1
-## mpg 0.2359928
+## mpg 0.2166385
 ```
 
 ```r
@@ -605,8 +569,8 @@ table(auto.lda1.class,auto.test$mpg01)
 ```
 ##                
 ## auto.lda1.class   0   1
-##               0 107   5
-##               1   0  84
+##               0 101   3
+##               1   0  92
 ```
 
 ```r
@@ -628,18 +592,18 @@ auto.lda2
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.4540816 0.5459184 
+## 0.4846939 0.5153061 
 ## 
 ## Group means:
 ##   horsepower   weight acceleration
-## 0  132.56180 3653.618     14.26292
-## 1   78.34579 2320.019     16.45701
+## 0   133.0421 3688.232     14.60316
+## 1    78.0198 2335.347     16.60396
 ## 
 ## Coefficients of linear discriminants:
-##                       LD1
-## horsepower   -0.005727568
-## weight       -0.001566224
-## acceleration  0.035453812
+##                        LD1
+## horsepower   -0.0025927840
+## weight       -0.0016452121
+## acceleration -0.0002233268
 ```
 
 ```r
@@ -651,8 +615,8 @@ table(auto.lda2.class,auto.test$mpg01)
 ```
 ##                
 ## auto.lda2.class  0  1
-##               0 84  2
-##               1 23 87
+##               0 80  4
+##               1 21 91
 ```
 
 ```r
@@ -679,12 +643,12 @@ auto.qda
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.4540816 0.5459184 
+## 0.4846939 0.5153061 
 ## 
 ## Group means:
 ##   horsepower   weight acceleration
-## 0  132.56180 3653.618     14.26292
-## 1   78.34579 2320.019     16.45701
+## 0   133.0421 3688.232     14.60316
+## 1    78.0198 2335.347     16.60396
 ```
 
 ```r
@@ -696,8 +660,8 @@ table(auto.qda.class,auto.test$mpg01)
 ```
 ##               
 ## auto.qda.class  0  1
-##              0 86  2
-##              1 21 87
+##              0 85  6
+##              1 16 89
 ```
 
 ```r
@@ -728,22 +692,22 @@ summary(auto.glm2)
 ## 
 ## Deviance Residuals: 
 ##      Min        1Q    Median        3Q       Max  
-## -2.21139  -0.07478   0.09156   0.30284   2.54316  
+## -2.47932  -0.09535   0.06806   0.28507   2.72484  
 ## 
 ## Coefficients:
 ##               Estimate Std. Error z value Pr(>|z|)    
-## (Intercept)  15.955706   4.071483   3.919  8.9e-05 ***
-## horsepower   -0.068870   0.028361  -2.428 0.015169 *  
-## weight       -0.003027   0.000905  -3.345 0.000823 ***
-## acceleration -0.033785   0.169261  -0.200 0.841790    
+## (Intercept)  14.917019   4.170857   3.576 0.000348 ***
+## horsepower   -0.044957   0.031127  -1.444 0.148655    
+## weight       -0.003865   0.001042  -3.709 0.000208 ***
+## acceleration  0.027026   0.187339   0.144 0.885294    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 270.058  on 195  degrees of freedom
-## Residual deviance:  94.196  on 192  degrees of freedom
-## AIC: 102.2
+##     Null deviance: 271.530  on 195  degrees of freedom
+## Residual deviance:  98.771  on 192  degrees of freedom
+## AIC: 106.77
 ## 
 ## Number of Fisher Scoring iterations: 7
 ```
@@ -758,8 +722,8 @@ table(auto.pred,auto.test$mpg01)
 ```
 ##          
 ## auto.pred  0  1
-##         0 89  7
-##         1 18 82
+##         0 87  8
+##         1 14 87
 ```
 
 ```r
@@ -775,38 +739,20 @@ An assumption of logistic regression is that none of the predictors are perfect,
 
 
 ```r
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
 knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=1)
-```
-
-```
-## Error in as.matrix(train): object 'auto.train.scaled' not found
-```
-
-```r
 table(knn.pred1,auto.test.y)
 ```
 
 ```
-## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found
+##          auto.test.y
+## knn.pred1  0  1
+##         0 83  9
+##         1 18 86
 ```
 
 ```r
@@ -820,38 +766,20 @@ table(knn.pred1,auto.test.y)
 
 
 ```r
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
 knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=2)
-```
-
-```
-## Error in as.matrix(train): object 'auto.train.scaled' not found
-```
-
-```r
 table(knn.pred1,auto.test.y)
 ```
 
 ```
-## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found
+##          auto.test.y
+## knn.pred1  0  1
+##         0 84 16
+##         1 17 79
 ```
 
 ```r
@@ -865,38 +793,20 @@ table(knn.pred1,auto.test.y)
 
 
 ```r
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
 knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=3)
-```
-
-```
-## Error in as.matrix(train): object 'auto.train.scaled' not found
-```
-
-```r
 table(knn.pred1,auto.test.y)
 ```
 
 ```
-## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found
+##          auto.test.y
+## knn.pred1  0  1
+##         0 85 11
+##         1 16 84
 ```
 
 ```r
@@ -911,38 +821,20 @@ table(knn.pred1,auto.test.y)
 
 
 ```r
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.train, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
-```
-
-```
-## Error in select(auto.test, horsepower, weight, acceleration): unused arguments (horsepower, weight, acceleration)
-```
-
-```r
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
 knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=4)
-```
-
-```
-## Error in as.matrix(train): object 'auto.train.scaled' not found
-```
-
-```r
 table(knn.pred1,auto.test.y)
 ```
 
 ```
-## Error in table(knn.pred1, auto.test.y): object 'knn.pred1' not found
+##          auto.test.y
+## knn.pred1  0  1
+##         0 85  9
+##         1 16 86
 ```
 
 ```r
@@ -987,23 +879,23 @@ summary(boston.glm1)
 ## 
 ## Deviance Residuals: 
 ##      Min        1Q    Median        3Q       Max  
-## -2.89905  -0.62435  -0.04365   0.60769   2.97667  
+## -3.01832  -0.57666  -0.03214   0.60158   3.11160  
 ## 
 ## Coefficients:
 ##              Estimate Std. Error z value Pr(>|z|)    
-## (Intercept)  6.081309   2.140603   2.841  0.00450 ** 
-## zn          -0.025088   0.014822  -1.693  0.09052 .  
-## indus        0.076613   0.028392   2.698  0.00697 ** 
-## dis         -0.617617   0.124513  -4.960 7.04e-07 ***
-## black       -0.012335   0.005265  -2.343  0.01913 *  
+## (Intercept)  6.692638   2.178599   3.072  0.00213 ** 
+## zn          -0.027440   0.016120  -1.702  0.08871 .  
+## indus        0.074386   0.028344   2.624  0.00868 ** 
+## dis         -0.673921   0.133281  -5.056 4.27e-07 ***
+## black       -0.013493   0.005325  -2.534  0.01127 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 525.34  on 378  degrees of freedom
-## Residual deviance: 306.65  on 374  degrees of freedom
-## AIC: 316.65
+##     Null deviance: 525.40  on 378  degrees of freedom
+## Residual deviance: 297.92  on 374  degrees of freedom
+## AIC: 307.92
 ## 
 ## Number of Fisher Scoring iterations: 7
 ```
@@ -1018,8 +910,8 @@ table(boston.pred1,boston.test$crime)
 ```
 ##             
 ## boston.pred1  0  1
-##            0 52 16
-##            1  9 50
+##            0 55 21
+##            1  8 43
 ```
 
 ```r
@@ -1044,19 +936,19 @@ boston.lda1
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.5065963 0.4934037 
+## 0.5013193 0.4986807 
 ## 
 ## Group means:
-##          zn     indus      dis    black
-## 0 20.778646  7.103698 5.115574 388.2181
-## 1  1.304813 15.322941 2.495096 321.5521
+##          zn    indus      dis    black
+## 0 20.168421  7.10900 5.016202 388.1484
+## 1  1.068783 15.50656 2.439763 320.3539
 ## 
 ## Coefficients of linear discriminants:
 ##                 LD1
-## zn     2.914518e-05
-## indus  9.010556e-02
-## dis   -3.229196e-01
-## black -3.048644e-03
+## zn    -0.0006021933
+## indus  0.0881035557
+## dis   -0.3427159390
+## black -0.0031011579
 ```
 
 ```r
@@ -1068,8 +960,8 @@ table(boston.lda.class,boston.test$crime)
 ```
 ##                 
 ## boston.lda.class  0  1
-##                0 55 19
-##                1  6 47
+##                0 55 22
+##                1  8 42
 ```
 
 ```r
@@ -1094,12 +986,12 @@ boston.qda1
 ## 
 ## Prior probabilities of groups:
 ##         0         1 
-## 0.5065963 0.4934037 
+## 0.5013193 0.4986807 
 ## 
 ## Group means:
-##          zn     indus      dis    black
-## 0 20.778646  7.103698 5.115574 388.2181
-## 1  1.304813 15.322941 2.495096 321.5521
+##          zn    indus      dis    black
+## 0 20.168421  7.10900 5.016202 388.1484
+## 1  1.068783 15.50656 2.439763 320.3539
 ```
 
 ```r
@@ -1111,8 +1003,8 @@ table(boston.qda.class,boston.test$crime)
 ```
 ##                 
 ## boston.qda.class  0  1
-##                0 54 14
-##                1  7 52
+##                0 53 18
+##                1 10 46
 ```
 
 ```r
@@ -1124,15 +1016,30 @@ table(boston.qda.class,boston.test$crime)
 ```
 21.2% error rate for QDA.
 
-Getting errors with the intial select commands:
+KNN with k=4
 
 ```r
-#boston.train.scaled <- scale(select(boston.train, zn, idus, dis, black))
-#boston.test.scaled <- scale(dplyr::select(boston.test, zn, idus, dis, black))
-#boston.train.y <- boston.train$crime
-#boston.test.y <- boston.test$crime
-#set.seed(1)
-#knn4.boston.pred <- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
-#table(knn4.boston.pred,boston.test.y)
+boston.train.scaled <- scale(dplyr::select(boston.train, zn, indus, dis, black))
+boston.test.scaled <- scale(dplyr::select(boston.test, zn, indus, dis, black))
+boston.train.y <- boston.train$crime
+boston.test.y <- boston.test$crime
+set.seed(1)
+knn4.boston.pred <- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
+table(knn4.boston.pred,boston.test.y)
 ```
-13.2% test error for k=4
+
+```
+##                 boston.test.y
+## knn4.boston.pred  0  1
+##                0 61  5
+##                1  2 59
+```
+
+```r
+(55+61)/127
+```
+
+```
+## [1] 0.9133858
+```
+9.1% test error for k=4

@@ -7,6 +7,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(error =  TRUE)
 ```
 
 **Chapter 4**
@@ -100,25 +101,25 @@ I'm not totally clear on how to read this table. Does 458 mean that the model pr
 
 ```{r}
 library(tidyverse)
-training <- filter(Weekly, Year < 2009)
-test <- filter(Weekly, Year > 2008)
-train.glm <- glm(Direction ~ Lag2, data = training, family = binomial)
+training.sm <- filter(Weekly, Year < 2009)
+test.sm <- filter(Weekly, Year > 2008)
+train.glm <- glm(Direction ~ Lag2, data = training.sm, family = binomial)
 summary(train.glm)
-glm.probs2 <- predict(train.glm,test,type="response")
+glm.probs2 <- predict(train.glm,test.sm,type="response")
 glm.pred2 <- rep("Down",104)
 glm.pred2[glm.probs2>.5]="Up"
-table(glm.pred2,test$Direction)
+table(glm.pred2,test.sm$Direction)
 (9+56)/104
 ```
 
 **(e) Repeat (d) using LDA.**
 ```{r}
 library(MASS)
-train.lda <- lda(Direction ~ Lag2, data = training)
+train.lda <- lda(Direction ~ Lag2, data = training.sm)
 train.lda
-lda.pred <- predict(train.lda, test)
+lda.pred <- predict(train.lda, test.sm)
 lda.class=lda.pred$class
-table(lda.class,test$Direction)
+table(lda.class,test.sm$Direction)
 (9+56)/104
 ```
 
@@ -128,21 +129,21 @@ Exactly the same result as my logistic regraion above!
 
 ```{r}
 library(MASS)
-train.qda <- qda(Direction ~ Lag2, data = training)
+train.qda <- qda(Direction ~ Lag2, data = training.sm)
 train.qda
-qda.pred <- predict(train.qda, test)
+qda.pred <- predict(train.qda, test.sm)
 qda.class=qda.pred$class
-table(qda.class,test$Direction)
+table(qda.class,test.sm$Direction)
 (61)/104
 ```
 58% accuracy - better than LDA. However, it seems to have done it by always predicting up.
 
 **(g) Repeat (d) using KNN with K = 1.**
 ```{r}
-train.lag2.scaled <- scale(select(training, Lag2))
-test.lag2.scaled <- scale(select(test, Lag2))
-train.y <- training$Direction
-test.y <- test$Direction
+train.lag2.scaled <- scale(dplyr::select(training.sm, Lag2))
+test.lag2.scaled <- scale(dplyr::select(test.sm, Lag2))
+train.y <- training.sm$Direction
+test.y <- test.sm$Direction
 set.seed(1)
 library(class)
 knn.pred1 <- knn(train.lag2.scaled, test.lag2.scaled, train.y, k=1)
@@ -161,10 +162,10 @@ out data. Note that you should also experiment with values for K in the KNN clas
 
 KNN with all variables as predictors:
 ```{r}
-train.scaled <- scale(select(training, -Direction, -Today))
-test.scaled <- scale(select(test, -Direction, -Today))
-train.y <- training$Direction
-test.y <- test$Direction
+train.scaled <- scale(dplyr::select(training.sm, -Direction, -Today))
+test.scaled <- scale(dplyr::select(test.sm, -Direction, -Today))
+train.y <- training.sm$Direction
+test.y <- test.sm$Direction
 set.seed(1)
 library(class)
 knn.pred1 <- knn(train.scaled, test.scaled, train.y, k=1)
@@ -174,11 +175,11 @@ table(knn.pred1,test.y)
 54.8% accuracy! This increases to 78% when Today is added (which drives direction)
 
 ```{r}
-train.lda2 <- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training)
+train.lda2 <- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training.sm)
 train.lda2
-lda.pred2 <- predict(train.lda2, test)
+lda.pred2 <- predict(train.lda2, test.sm)
 lda.class2=lda.pred2$class
-table(lda.class2,test$Direction)
+table(lda.class2,test.sm$Direction)
 ```
 Now exactly the same as QDA - makes given that we've added polynomial terms.
 
@@ -265,8 +266,8 @@ An assumption of logistic regression is that none of the predictors are perfect,
 **(g) Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain? Which value of K seems to perform the best on this data set?**
 
 ```{r}
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
@@ -277,8 +278,8 @@ table(knn.pred1,auto.test.y)
 17.3% test error for k=1
 
 ```{r}
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
@@ -289,8 +290,8 @@ table(knn.pred1,auto.test.y)
 17.9% test error for k=2
 
 ```{r}
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
@@ -302,8 +303,8 @@ table(knn.pred1,auto.test.y)
 
 
 ```{r}
-auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
-auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.scaled <- scale(dplyr::select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(dplyr::select(auto.test, horsepower, weight, acceleration))
 auto.train.y <- auto.train$mpg01
 auto.test.y <- auto.test$mpg01
 set.seed(1)
@@ -363,14 +364,15 @@ table(boston.qda.class,boston.test$crime)
 ```
 21.2% error rate for QDA.
 
-Getting errors with the intial select commands:
+KNN with k=4
 ```{r}
-#boston.train.scaled <- scale(select(boston.train, zn, idus, dis, black))
-#boston.test.scaled <- scale(dplyr::select(boston.test, zn, idus, dis, black))
-#boston.train.y <- boston.train$crime
-#boston.test.y <- boston.test$crime
-#set.seed(1)
-#knn4.boston.pred <- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
-#table(knn4.boston.pred,boston.test.y)
+boston.train.scaled <- scale(dplyr::select(boston.train, zn, indus, dis, black))
+boston.test.scaled <- scale(dplyr::select(boston.test, zn, indus, dis, black))
+boston.train.y <- boston.train$crime
+boston.test.y <- boston.test$crime
+set.seed(1)
+knn4.boston.pred <- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
+table(knn4.boston.pred,boston.test.y)
+(55+61)/127
 ```
-13.2% test error for k=4
+9.1% test error for k=4
