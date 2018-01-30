@@ -11,6 +11,24 @@ knitr::opts_chunk$set(echo = TRUE)
 
 **Chapter 4**
 
+**5. We now examine the differences between LDA and QDA.**
+
+**(a) If the Bayes decision boundary is linear, do we expect LDA or QDA to perform better on the training set? On the test set?**
+
+They should be similar on the training set, but LDA should perform better on the test set because it has less variance.
+
+**(b) If the Bayes decision boundary is non-linear, do we expect LDA or QDA to perform better on the training set? On the test set?**
+
+QDA should do better on both, as it will better model the non-linear boundary for the training set and will have less bias on the test.
+
+**(c) In general, as the sample size n increases, do we expect the test prediction accuracy of QDA relative to LDA to improve, decline, or be unchanged? Why?**
+
+As the sample size goes up, the relative prediction accuracy of QDA should go up, as the variance will decrease.
+
+**(d) True or False: Even if the Bayes decision boundary for a given problem is linear, we will probably achieve a superior test error rate using QDA rather than LDA because QDA is flexible enough to model a linear decision boundary. Justify your answer.**
+
+False, because QDA could overfit the data and have high variance, particualrly with small sample sizes.
+
 **6. Suppose we collect data for a group of students in a statistics class with variables X1 =hours studied, X2 =undergrad GPA, and Y = receive an A. We fit a logistic regression and produce estimated coefficient, ˆ β0 = −6, ˆβ1 = 0.05, ˆβ2 = 1.**
 
 (a) Estimate the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class.
@@ -23,6 +41,25 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 
 ```
+
+**8. Suppose that we take a data set, divide it into equally-sized training and test sets, and then try out two different classification procedures. First we use logistic regression and get an error rate of 20% on the training data and 30% on the test data. Next we use 1-nearest neighbors (i.e. K = 1) and get an average error rate (averaged over both test and training data sets) of 18 %. Based on these results, which method should we prefer to use for classification of new observations? Why?**
+
+This is a trick question. The training error rate for k=1 is always 0, because you only look at one point, so that means the test error is 36%. Therefore logistic regression is preferred.
+
+**9. This problem has to do with odds.**
+**(a) On average, what fraction of people with an odds of 0.37 of defaulting on their credit card payment will in fact default?**
+(x)/1-x = .37   x = .37 - .37x  1.37x = .37   x = .37/1.37
+```{r}
+.37/1.37
+```
+
+
+**(b) Suppose that an individual has a 16% chance of defaulting on her credit card payment. What are the odds that she will default?**
+
+```{r}
+.16/(1-.16)
+```
+
 
 **10. This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1, 089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.**
 
@@ -87,6 +124,64 @@ table(lda.class,test$Direction)
 
 Exactly the same result as my logistic regraion above!
 
+**(f) Repeat (d) using QDA.**
+
+```{r}
+library(MASS)
+train.qda <- qda(Direction ~ Lag2, data = training)
+train.qda
+qda.pred <- predict(train.qda, test)
+qda.class=qda.pred$class
+table(qda.class,test$Direction)
+(61)/104
+```
+58% accuracy - better than LDA. However, it seems to have done it by always predicting up.
+
+**(g) Repeat (d) using KNN with K = 1.**
+```{r}
+train.lag2.scaled <- scale(select(training, Lag2))
+test.lag2.scaled <- scale(select(test, Lag2))
+train.y <- training$Direction
+test.y <- test$Direction
+set.seed(1)
+library(class)
+knn.pred1 <- knn(train.lag2.scaled, test.lag2.scaled, train.y, k=1)
+table(knn.pred1,test.y)
+(15+36)/104
+```
+49% accuracy!
+
+**(h) Which of these methods appears to provide the best results on this data?**
+
+Logistic regression and LDA were best.
+
+**(i) Experiment with different combinations of predictors, including possible transformations and interactions, for each of the
+methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held
+out data. Note that you should also experiment with values for K in the KNN classifier.**
+
+KNN with all variables as predictors:
+```{r}
+train.scaled <- scale(select(training, -Direction, -Today))
+test.scaled <- scale(select(test, -Direction, -Today))
+train.y <- training$Direction
+test.y <- test$Direction
+set.seed(1)
+library(class)
+knn.pred1 <- knn(train.scaled, test.scaled, train.y, k=1)
+table(knn.pred1,test.y)
+(18+39)/104
+```
+54.8% accuracy! This increases to 78% when Today is added (which drives direction)
+
+```{r}
+train.lda2 <- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training)
+train.lda2
+lda.pred2 <- predict(train.lda2, test)
+lda.class2=lda.pred2$class
+table(lda.class2,test$Direction)
+```
+Now exactly the same as QDA - makes given that we've added polynomial terms.
+
 **11. In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.**
 
 **(a) Create a binary variable, mpg01, that contains a 1 if mpg contains a value above its median, and a 0 if mpg contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the data.frame()
@@ -138,6 +233,19 @@ table(auto.lda2.class,auto.test$mpg01)
 ```
 LDA works with near-perfect predictors - the first model with mpg as predictor was 97% accurate. With horsepower, weight, and acceleration LDA was 85% accurate - slightly better than logistic regression with the same predictors.
 
+**(e) Perform QDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in
+(b). What is the test error of the model obtained?**
+
+```{r}
+auto.qda <- qda(mpg01 ~ horsepower + weight + acceleration, data = auto.train)
+auto.qda
+auto.qda.pred <- predict(auto.qda, auto.test)
+auto.qda.class=auto.qda.pred$class
+table(auto.qda.class,auto.test$mpg01)
+(77+91)/196
+```
+85.7% test accuracy rate - slightly better than LDA.
+
 **(f) Perform logistic regression on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?**
 
 ```{r}
@@ -153,3 +261,116 @@ table(auto.pred,auto.test$mpg01)
 1-(75+91)/196
 ```
 An assumption of logistic regression is that none of the predictors are perfect, so mpg needs to be excluded. With the three selected variables, we get a 15.3% error rate.
+
+**(g) Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain? Which value of K seems to perform the best on this data set?**
+
+```{r}
+auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.y <- auto.train$mpg01
+auto.test.y <- auto.test$mpg01
+set.seed(1)
+knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=1)
+table(knn.pred1,auto.test.y)
+1-((83+79)/196)
+```
+17.3% test error for k=1
+
+```{r}
+auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.y <- auto.train$mpg01
+auto.test.y <- auto.test$mpg01
+set.seed(1)
+knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=2)
+table(knn.pred1,auto.test.y)
+1-((85+76)/196)
+```
+17.9% test error for k=2
+
+```{r}
+auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.y <- auto.train$mpg01
+auto.test.y <- auto.test$mpg01
+set.seed(1)
+knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=3)
+table(knn.pred1,auto.test.y)
+1-((89+83)/196)
+```
+12.2% test error for k=3
+
+
+```{r}
+auto.train.scaled <- scale(select(auto.train, horsepower, weight, acceleration))
+auto.test.scaled <- scale(select(auto.test, horsepower, weight, acceleration))
+auto.train.y <- auto.train$mpg01
+auto.test.y <- auto.test$mpg01
+set.seed(1)
+knn.pred1 <- knn(auto.train.scaled, auto.test.scaled, auto.train.y, k=4)
+table(knn.pred1,auto.test.y)
+1-((87+83)/196)
+```
+13.2% test error for k=4
+
+**13. Using the Boston data set, fit classification models in order to predict whether a given suburb has a crime rate above or below the median. Explore logistic regression, LDA, and KNN models using various subsets of the predictors. Describe your findings.**
+
+Generate a new variable, "crime," to hold whether the data is above or below the median.
+```{r}
+boston <- Boston
+boston <- mutate(boston, crime = ifelse(crim > median(crim),1,0))
+```
+
+Create test and training sets using a random number generator.
+```{r}
+boston <- mutate(boston, rand = sample(1:506))
+boston.train <- filter(boston, rand < 380)
+boston.test <- filter(boston, rand > 379)
+```
+
+
+Logistic regression using zn, indus, dis, and black as predictors. Raw generated an error and medv wasn't significant, so it was dropped.
+```{r}
+boston.glm1 <- glm(crime ~ zn + indus + dis + black, data = boston.train, family = binomial)
+summary(boston.glm1)
+boston.glm.probs1 <- predict(boston.glm1,boston.test,type="response")
+boston.pred1 <- rep(0,127)
+boston.pred1[boston.glm.probs1>.5]=1
+table(boston.pred1,boston.test$crime)
+1-(44+55)/127
+```
+22% error rate for logistic regression.
+
+LDA using the same predictors:
+```{r}
+boston.lda1 <- lda(crime ~ zn + indus + dis + black, data = boston.train)
+boston.lda1
+boston.lda.pred <- predict(boston.lda1, boston.test)
+boston.lda.class = boston.lda.pred$class
+table(boston.lda.class,boston.test$crime)
+1-(47+49)/127
+```
+24.4% error rate for LDA.
+
+QDA using the same predictors:
+```{r}
+boston.qda1 <- qda(crime ~ zn + indus + dis + black, data = boston.train)
+boston.qda1
+boston.qda.pred <- predict(boston.qda1, boston.test)
+boston.qda.class = boston.qda.pred$class
+table(boston.qda.class,boston.test$crime)
+1-(47+53)/127
+```
+21.2% error rate for QDA.
+
+Getting errors with the intial select commands:
+```{r}
+#boston.train.scaled <- scale(select(boston.train, zn, idus, dis, black))
+#boston.test.scaled <- scale(dplyr::select(boston.test, zn, idus, dis, black))
+#boston.train.y <- boston.train$crime
+#boston.test.y <- boston.test$crime
+#set.seed(1)
+#knn4.boston.pred <- knn(boston.train.scaled, boston.test.scaled, boston.train.y, k=4)
+#table(knn4.boston.pred,boston.test.y)
+```
+13.2% test error for k=4
