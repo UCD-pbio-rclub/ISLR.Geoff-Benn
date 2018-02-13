@@ -175,7 +175,7 @@ table(knn.pred1,test.y)
 54.8% accuracy! This increases to 78% when Today is added (which drives direction)
 
 ```{r}
-train.lda2 <- lda(Direction ~ Lag2 + poly(Lag2, 4), data = training.sm)
+train.lda2 <- lda(Direction ~ poly(Lag2, 4), data = training.sm)
 train.lda2
 lda.pred2 <- predict(train.lda2, test.sm)
 lda.class2=lda.pred2$class

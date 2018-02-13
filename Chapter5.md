@@ -19,6 +19,10 @@ ii. LOOCV?
 -depending on the statistic LOOCV can be computationally expensive
 -the training set is essentially identical each time, so variance could be an issue
 
+**4. Suppose that we use some statistical learning method to make a prediction for the response Y for a particular value of the predictor X. Carefully describe how we might estimate the standard deviation of our prediction.**
+
+I would use a bootstrap approach - I would sample with replacement from the dataset, fit the model, and then make the prediction and repeat 1000 times. I would then calculate the standard deviation. This would be correct, because we're trying to estimate the standard deviation of the prediction, not the accuracy of the model.
+
 **5. In Chapter 4, we used logistic regression to predict the probability of default using income and balance on the Default data set. We will now estimate the test error of this logistic regression model using the validation set approach. Do not forget to set a random seed before beginning your analysis.**
 
 (a) Fit a logistic regression model that uses income and balance to predict default.
@@ -451,6 +455,69 @@ table(glm.pred2,default.test2$default)
 ```
 97.12% overall and 27.7% correct on the defaults. Not a big change.
 
+**6. We continue to consider the use of a logistic regression model to predict the probability of default using income and balance on the Default data set. In particular, we will now compute estimates for the standard errors of the income and balance logistic regression coefficients in two different ways: (1) using the bootstrap, and (2) using the standard formula for computing the standard errors in the glm() function. Do not forget to set a random seed before beginning your analysis.**
+
+(a) Using the summary() and glm() functions, determine the estimated standard errors for the coefficients associated with income
+and balance in a multiple logistic regression model that uses both predictors.
+
+
+```r
+summary(default.glm1)$coef
+```
+
+```
+##                  Estimate   Std. Error    z value      Pr(>|z|)
+## (Intercept) -1.154047e+01 4.347564e-01 -26.544680 2.958355e-155
+## income       2.080898e-05 4.985167e-06   4.174178  2.990638e-05
+## balance      5.647103e-03 2.273731e-04  24.836280 3.638120e-136
+```
+
+
+(b) Write a function, boot.fn(), that takes as input the Default data set as well as an index of the observations, and that outputs the coefficient estimates for income and balance in the multiple logistic regression model.
+
+
+```r
+boot.fn <- function(data, index) {
+  return(coef(glm(default ~ income + balance, data = default, subset = index, family = binomial)))
+}
+boot.fn(default, 1:10000)
+```
+
+```
+##   (Intercept)        income       balance 
+## -1.154047e+01  2.080898e-05  5.647103e-03
+```
+
+
+(c) Use the boot() function together with your boot.fn() function to estimate the standard errors of the logistic regression coefficients for income and balance.
+
+
+```r
+library(boot)
+boot(default, boot.fn, 100)
+```
+
+```
+## 
+## ORDINARY NONPARAMETRIC BOOTSTRAP
+## 
+## 
+## Call:
+## boot(data = default, statistic = boot.fn, R = 100)
+## 
+## 
+## Bootstrap Statistics :
+##          original        bias     std. error
+## t1* -1.154047e+01 -4.476601e-02 4.729915e-01
+## t2*  2.080898e-05 -1.296434e-07 5.184228e-06
+## t3*  5.647103e-03  2.850525e-05 2.418275e-04
+```
+
+
+(d) Comment on the estimated standard errors obtained using the glm() function and using your bootstrap function.
+
+The bootstrap estimates of standard error were pretty close to what the GLM gave, but were slightly higher.
+
 **7. In Sections 5.3.2 and 5.3.3, we saw that the cv.glm() function can be used in order to compute the LOOCV test error estimate. Alternatively, one could compute those quantities using just the glm() and predict.glm() functions, and a for loop. You will now take this approach in order to compute the LOOCV error for a simple logistic regression model on the Weekly data set. Recall that in the context of classification problems, the LOOCV error is given in (5.4).**
 
 
@@ -551,21 +618,219 @@ then indicate this as a 1, and otherwise indicate it as a 0.
 
 
 ```r
-cv.error <- rep(1, dim(weekly)[1])
-i <- 1
+cv.error <- rep(1, dim(weekly)[0])
+```
+
+```
+## Error in rep(1, dim(weekly)[0]): invalid 'times' argument
+```
+
+```r
 for (i in 1:dim(weekly)[1]) {
-  train <- filter(weekly, ID != i)
-  dir.glm3 <- glm(Direction ~ Lag1 + Lag2, data = train, family = binomial)
-  pred <- predict.glm(dir.glm3, weekly[i,], type = "response") > 0.5
-  if (weekly[i,]$Direction == pred) { cv.error[i] == 1}
+  dir.glm3 <- glm(Direction ~ Lag1 + Lag2, data = weekly[-i,], family = binomial)
+  pred <- predict.glm(dir.glm3, weekly[i,], type = "response")
+  dir <- ifelse(pred > 0.5, "UP", "DOWN")
+  cv.error[i] <- ifelse(weekly[i,]$Direction == dir, 1, 0)
 }
+```
+
+```
+## Error in cv.error[i] <- ifelse(weekly[i, ]$Direction == dir, 1, 0): object 'cv.error' not found
+```
+
+```r
 mean(cv.error)
 ```
 
 ```
-## [1] 1
+## Error in mean(cv.error): object 'cv.error' not found
 ```
 
 
 (e) Take the average of the n numbers obtained in (d)iv in order to obtain the LOOCV estimate for the test error. Comment on the
 results.
+
+**9. We will now consider the Boston housing data set, from the MASS library.**
+
+(a) Based on this data set, provide an estimate for the population mean of medv. Call this estimate ˆμ.
+
+
+```r
+library(MASS)
+```
+
+```
+## 
+## Attaching package: 'MASS'
+```
+
+```
+## The following object is masked from 'package:dplyr':
+## 
+##     select
+```
+
+```r
+boston <- Boston
+mean(boston$medv)
+```
+
+```
+## [1] 22.53281
+```
+
+
+(b) Provide an estimate of the standard error of ˆμ. Interpret this result.
+Hint: We can compute the standard error of the sample mean by dividing the sample standard deviation by the square root of the
+number of observations.
+
+
+```r
+sd(boston$medv)/sqrt(nrow(boston))
+```
+
+```
+## [1] 0.4088611
+```
+
+
+(c) Now estimate the standard error of ˆμ using the bootstrap. How does this compare to your answer from (b)?
+
+
+```r
+sd.err <- function(data, index) {
+  return(mean(data[index]))
+}
+boot(boston$medv, sd.err, 100)
+```
+
+```
+## 
+## ORDINARY NONPARAMETRIC BOOTSTRAP
+## 
+## 
+## Call:
+## boot(data = boston$medv, statistic = sd.err, R = 100)
+## 
+## 
+## Bootstrap Statistics :
+##     original     bias    std. error
+## t1* 22.53281 0.05420553   0.4196802
+```
+
+
+(d) Based on your bootstrap estimate from (c), provide a 95% confidence interval for the mean of medv. Compare it to the results
+obtained using t.test(Boston$medv).
+Hint: You can approximate a 95% confidence interval using the formula [ˆμ − 2SE(ˆμ), ˆμ + 2SE(ˆμ)].
+
+
+```r
+#Lower:
+  22.53-(2*.41)
+```
+
+```
+## [1] 21.71
+```
+
+```r
+#Upper:
+  22.53+(2*.41)
+```
+
+```
+## [1] 23.35
+```
+
+```r
+t.test(boston$medv)
+```
+
+```
+## 
+## 	One Sample t-test
+## 
+## data:  boston$medv
+## t = 55.111, df = 505, p-value < 2.2e-16
+## alternative hypothesis: true mean is not equal to 0
+## 95 percent confidence interval:
+##  21.72953 23.33608
+## sample estimates:
+## mean of x 
+##  22.53281
+```
+The intervals are pretty close to each other.
+
+(e) Based on this data set, provide an estimate, ˆμmed, for the median value of medv in the population.
+
+
+```r
+median(boston$medv)
+```
+
+```
+## [1] 21.2
+```
+
+
+(f) We now would like to estimate the standard error of ˆμmed. Unfortunately, there is no simple formula for computing the standard error of the median. Instead, estimate the standard error of the median using the bootstrap. Comment on your findings.
+
+
+```r
+med.err <- function(data, index) {
+  return(median(data[index]))
+}
+boot(boston$medv, med.err, 100)
+```
+
+```
+## 
+## ORDINARY NONPARAMETRIC BOOTSTRAP
+## 
+## 
+## Call:
+## boot(data = boston$medv, statistic = med.err, R = 100)
+## 
+## 
+## Bootstrap Statistics :
+##     original  bias    std. error
+## t1*     21.2   0.015   0.3897357
+```
+
+
+(g) Based on this data set, provide an estimate for the tenth percentile of medv in Boston suburbs. Call this quantity ˆμ0.1. (You can use the quantile() function.)
+
+
+```r
+quantile(boston$medv, probs = 0.1)
+```
+
+```
+##   10% 
+## 12.75
+```
+
+
+(h) Use the bootstrap to estimate the standard error of ˆμ0.1. Comment on your findings.
+
+
+```r
+quant.err <- function(data, index) {
+  return(quantile(data[index],probs = 0.1))
+}
+boot(boston$medv, quant.err, 100)
+```
+
+```
+## 
+## ORDINARY NONPARAMETRIC BOOTSTRAP
+## 
+## 
+## Call:
+## boot(data = boston$medv, statistic = quant.err, R = 100)
+## 
+## 
+## Bootstrap Statistics :
+##     original  bias    std. error
+## t1*    12.75  0.0835   0.4362984
+```
