@@ -1,6 +1,8 @@
 ---
 title: "Chapter6"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -43,6 +45,27 @@ v. The predictors in the k-variable model identified by best subset are a subset
 model identified by best subset selection.
 
 False. This could happen, but the best subset for k + 1 could potentially drop one or more of the predictors used in the model with k predictors.
+
+**2. For parts (a) through (c), indicate which of i. through iv. is correct. Justify your answer.**
+(a) The lasso, relative to least squares, is:
+i. More flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in
+variance.
+ii. More flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease
+in bias.
+iii. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in
+variance.
+iv. Less flexible and hence will give improved prediction accuracy when its increase in variance is less than its decrease
+in bias.
+
+Option iii is true. It is less flexible because you can't incorporate as many terms into your model. This should reduce error due to overfitting (variance), but could limit your ability to properly model the data (bias).
+
+(b) Repeat (a) for ridge regression relative to least squares.
+
+Same answer as for the lasso.
+
+(c) Repeat (a) for non-linear methods relative to least squares.
+
+Choice ii is true. This is bacause non-linear methods are more flexible by being able to fit more complex models to the data. This will be better in situations where the underlying function is complex (meaning that least squares will have higher bias).
 
 **8. In this exercise, we will generate simulated data, and will then use this data to perform best subset selection.**
 
@@ -119,5 +142,114 @@ Same result for BIC, but it went with 5 or adjr2.
 
 (e) Now fit a lasso model to the simulated data, again using X,X2, . . . , X10 as predictors. Use cross-validation to select the optimal value of λ. Create plots of the cross-validation error as a function of λ. Report the resulting coefficient estimates, and discuss the results obtained.
 
+```{r}
+library(glmnet)
+x <- model.matrix(y ~ ., data = data2)
+y <- data2$y
+fit.lasso <- glmnet(x,y)
+plot(fit.lasso,xvar = "lambda", label = TRUE)
+cv.lasso <- cv.glmnet(x,y)
+plot(cv.lasso)
+coef(cv.lasso)
+```
+It looks like the optimal log lamba is around 4.4 (how do I find the exact value?), which uses 3 terms from the model.
 
 (f) Now generate a response vector Y according to the model Y = β0 + β7X7 + ϵ, and perform best subset selection and the lasso. Discuss the results obtained.
+
+set up the data:
+```{r}
+set.seed(1)
+p <- rnorm(100, 10, 1)
+e <- rnorm(100, 1, .1)
+B0 <- 5
+B7 <- 2
+r <- B0 + B7*(p^7) + e
+data3 <- data.frame(p, r)
+```
+
+lasso:
+```{r}
+x1 <- model.matrix(r ~ poly(p,10,raw=T), data = data3)
+y1 <- data3$r
+fit.lasso <- glmnet(x1,y1)
+plot(fit.lasso,xvar = "lambda", label = TRUE)
+cv.lasso <- cv.glmnet(x1,y1)
+plot(cv.lasso)
+coef(cv.lasso)
+```
+This favors a three term model, which includes X7, so that's good.
+
+**9. In this exercise, we will predict the number of applications received using the other variables in the College data set.**
+
+(a) Split the data set into a training set and a test set.
+```{r}
+library(ISLR)
+college <- College
+library(caTools)
+college$set <- sample.split(college$Private, SplitRatio = .75)
+college.test <- subset(college, set == "FALSE")
+college.train <- subset(college, set == "TRUE")
+```
+
+(d) Fit a lasso model on the training set, with λ chosen by crossvalidation. Report the test error obtained, along with the number
+of non-zero coefficient estimates.
+
+```{r}
+x2 <- model.matrix(Apps ~ ., data = college.train)
+x2.test <- model.matrix(Apps ~ ., data = college.test)
+y2 <- college.train$Apps
+fit.lasso3 <- glmnet(x2,y2)
+plot(fit.lasso3,xvar = "lambda", label = TRUE)
+cv.lasso3 <- cv.glmnet(x2,y2)
+plot(cv.lasso3)
+coef(cv.lasso3)
+lambda <- cv.lasso3$lambda.min
+lambda
+lasso.pred = predict(cv.lasso3, newx = x2.test, s=lambda)
+mean((college.test[, "Apps"] - lasso.pred)^2)
+```
+
+11. We will now try to predict per capita crime rate in the Boston data set.
+
+(a) Try out some of the regression methods explored in this chapter, such as best subset selection, the lasso, ridge regression, and PCR. Present and discuss results for the approaches that you consider.
+
+Set up test and training sets:
+```{r}
+library(MASS)
+boston <- Boston
+boston$set <- sample.split(boston$crim, SplitRatio = .75)
+boston.test <- subset(boston, set == "FALSE")
+boston.train <- subset(boston, set == "TRUE")
+```
+
+lasso:
+```{r}
+x5 <- model.matrix(crim ~ ., data = boston.train)
+x5.test <- model.matrix(crim ~ ., data = boston.test)
+y5 <- boston.train$crim
+fit.lasso5 <- glmnet(x5,y5)
+plot(fit.lasso5,xvar = "lambda", label = TRUE)
+cv.lasso5 <- cv.glmnet(x5,y5)
+plot(cv.lasso5)
+coef(cv.lasso5)
+lambda4 <- cv.lasso4$lambda.min
+lambda4
+lasso.pred4 = predict(cv.lasso4, newx = x4.test, s=lambda4)
+mean((boston.test[, "crim"] - lasso.pred4)^2)
+```
+
+lasso:
+```{r}
+x4 <- model.matrix(crim ~ ., data = boston.train)
+x4.test <- model.matrix(crim ~ ., data = boston.test)
+y4 <- boston.train$crim
+fit.lasso4 <- glmnet(x4,y4)
+plot(fit.lasso4,xvar = "lambda", label = TRUE)
+cv.lasso4 <- cv.glmnet(x4,y4)
+plot(cv.lasso4)
+coef(cv.lasso4)
+lambda4 <- cv.lasso4$lambda.min
+lambda4
+lasso.pred4 = predict(cv.lasso4, newx = x4.test, s=lambda4)
+mean((boston.test[, "crim"] - lasso.pred4)^2)
+```
